@@ -916,7 +916,7 @@ function speak(text,btn){if(!tts)return;tts.speak(strip(text).slice(0,1900)).cat
 /* ============ rendering ============ */
 let tab='kurs',course='t6',parentOpen=false,chat=[],chatCtl=null;
 try{course=localStorage.getItem('mk-course')||'t6'}catch(e){}
-const NAV=[['kurs','🗺️','Kurs'],['lyn','⚡','Lynrunde'],['pokal','🏆','Pokaler'],IN_CLAUDE?['spor','💬','Spør Kubo']:['spor','📖','Mattebok'],['voksen','🔒','Voksne']];
+const NAV=[['kurs','🗺️','Kurs'],['lyn','⚡','Lynrunde'],['pokal','🏆','Pokaler'],['spor','💬','Spør Kubo'],['voksen','🔒','Voksne']];
 function render(){
   $('#brand').innerHTML=KUBO(34)+'<span>Mattekraft</span>';
   $('#stats').innerHTML=`<div class="stat" title="Dager på rad">🔥 ${S.streak.n}</div><div class="stat" title="XP">⚡ ${S.xp}</div><div class="stat" title="Diamanter">💎 ${S.gems||0}</div><div class="stat" title="Kroner">👑 ${totalCrowns()}</div><div class="stat" title="Pokaler">🏆 ${Object.keys(S.trophies).length}</div>`;
@@ -1090,7 +1090,7 @@ function viewBok(){const q=bokQ.toLowerCase().trim();const match=u=>!q||(u.title
   <div class="stack">${groups||'<p class="muted">Fant ingenting. Prøv et annet ord.</p>'}</div></div>`}
 document.addEventListener('input',e=>{if(e.target.id==='bokQ'){bokQ=e.target.value;const pos=e.target.selectionStart;render();const i=$('#bokQ');if(i){i.focus();i.setSelectionRange(pos,pos)}}});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-learn]');if(b)openLearn(U.find(u=>u.id===b.dataset.learn))});
-function viewSpor(){if(!IN_CLAUDE)return viewBok();return `<div class="stack"><div class="card"><div class="kubo-say">${KUBO(56)}<div style="min-width:0"><h2 style="font-size:24px">Spør Kubo</h2><p class="muted" style="margin:0">Lurer du på noe i matte? Skriv spørsmålet ditt, så forklarer Kubo med eksempler fra Minecraft, biler, turn og mat.</p></div></div></div>
+function viewSpor(){if(!IN_CLAUDE)return viewBot();return `<div class="stack"><div class="card"><div class="kubo-say">${KUBO(56)}<div style="min-width:0"><h2 style="font-size:24px">Spør Kubo</h2><p class="muted" style="margin:0">Lurer du på noe i matte? Skriv spørsmålet ditt, så forklarer Kubo med eksempler fra Minecraft, biler, turn og mat.</p></div></div></div>
   ${canImg?`<div class="card stack"><div class="row" style="flex-wrap:nowrap"><div style="font-size:40px">📸</div><div style="min-width:0"><b>Ta bilde av regnestykket</b><div class="note">Kubo retter svarene dine og viser steg for steg hvordan oppgaven skal løses. Ta bildet rett ovenfra i godt lys.</div></div></div>
    <div class="row"><label class="btn gold" for="photoIn">📷 Ta bilde</label><label class="btn ghost" for="photoLib">🖼️ Velg fra bilder</label></div>
    <input type="file" id="photoIn" accept="image/*" capture="environment" class="vh"><input type="file" id="photoLib" accept="image/*" class="vh"></div>`:''}
@@ -1108,7 +1108,7 @@ async function sendPhoto(text){if(chatCtl||!pendingImg)return;const{file,url}=pe
   chat.push({role:'assistant',content:txt||strip(el.innerHTML)||'…'});render()}
 document.addEventListener('change',e=>{if(e.target.id!=='photoIn'&&e.target.id!=='photoLib')return;const f=e.target.files&&e.target.files[0];if(!f)return;pendingImg={file:f,url:URL.createObjectURL(f)};render();const a=$('#askIn');if(a)a.scrollIntoView({block:'center'})});
 document.addEventListener('click',e=>{if(e.target.id==='rmImg'){pendingImg=null;render()}if(e.target.closest('#photoGo')){tab='spor';render();scrollTo({top:0})}});
-async function sendChat(text){text=text.trim();if(pendingImg)return sendPhoto(text);if(!text||chatCtl)return;chat.push({role:'user',content:text});render();
+async function sendChat(text){if(!IN_CLAUDE)return botSend(text);text=text.trim();if(pendingImg)return sendPhoto(text);if(!text||chatCtl)return;chat.push({role:'user',content:text});render();
   const c=$('#chat');const el=document.createElement('div');el.className='msg bot';c.appendChild(el);el.scrollIntoView({block:'nearest'});chatCtl=new AbortController();$('#askBtn').textContent='Stopp';
   const turns=[{role:'user',content:RULES+'\n\nHer kommer gutten sitt første spørsmål.'},...chat.slice(-10).map(m=>({role:m.role,content:m.img?'[Sendte et bilde av regnestykker] '+m.content:m.content}))];if(turns[1]&&turns[1].role!=='user')turns.splice(1,1);
   const txt=await askKubo(turns,el,{signal:chatCtl.signal});chatCtl=null;if(txt)chat.push({role:'assistant',content:txt});else chat.push({role:'assistant',content:strip(el.innerHTML)||'…'});render();}
@@ -1116,6 +1116,153 @@ document.addEventListener('click',e=>{const s=e.target.closest('[data-sugg]');if
   if(e.target.id==='askBtn'){if(chatCtl){chatCtl.abort();return}sendChat($('#askIn').value)}
   if(e.target.id==='newChat'){chat=[];render()}});
 document.addEventListener('keydown',e=>{if(e.target.id==='askIn'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat(e.target.value)}});
+
+/* ============ Kubo-bot: regelbasert, uten AI (nettversjonen) ============ */
+const BOT_SUGG=['Hva er 7 · 8?','Gi meg en oppgave','Hvordan husker jeg 7-gangen?','1/2 + 1/4','25 % av 80','Hva er en brøk?','3,5 + 1,25','Fortell en vits'];
+const YAY=['Rått! 🎉','Helt riktig! 💎','Sterkt! Du er en matte-maskin 🤖','Jaaa! Full pott! ⭐','Perfekt, som en salto med stø landing 🤸','Diamant-svar! 💎'];
+let botQuiz=null,bokOpen=false;
+const chips=a=>`<div class="sugg" style="margin-top:10px">${a.map(s=>`<button class="chip" data-sugg="${esc(s)}">${esc(s)}</button>`).join('')}</div>`;
+const kk=x=>`<b>${fmt(x)}</b>`;
+const lcm=(a,b)=>a/gcd(a,b)*b;
+const nDec=x=>{const s=String(x);return s.includes('.')?s.split('.')[1].length:0};
+const fr=(n,d)=>{const g=gcd(n,d)||1;return [n/g,d/g]};
+const frTxt=(n,d)=>d===1?String(n):frac(n,d);
+const TNAME={to:2,tre:3,fire:4,fem:5,seks:6,sju:7,syv:7,'åtte':8,ni:9,ti:10};
+const TRICK={1:'Én gang noe er bare seg selv.',2:'Doble! 7 · 2 = 7 + 7.',3:'Hopp tre og tre: 3, 6, 9, 12 … Sjekk: tverrsummen er alltid 3, 6 eller 9.',4:'Doble to ganger: 6 · 4 → 12 → 24.',5:'Svaret ender alltid på 0 eller 5. Det er halvparten av ti-gangen.',6:'Ta fem-gangen og legg til én gruppe til: 6 · 7 = 35 + 7 = 42.',7:'Bruk 7 = 5 + 2: 7 · 6 = 30 + 12 = 42. Og husk rekka 5-6-7-8: 56 = 7 · 8!',8:'Doble tre ganger: 7 · 8 → 14 → 28 → 56.',9:'Ta ti-gangen og trekk fra én: 9 · 6 = 60 − 6 = 54. Sifrene i svaret blir alltid 9 til sammen (5 + 4).',10:'Heng på en null: 7 · 10 = 70.'};
+function botNorm(t){return (' '+t.toLowerCase()+' ').replace(/−|–/g,'-').replace(/(\d)\s*,\s*(?=\d)/g,'$1.')
+  .replace(/(\d)\s*x\s*(?=\d)/g,'$1*').replace(/[×·]|\bganger\b|\bgange\b/g,'*').replace(/÷|delt p[åa]|delt med|dividert med/g,'/').replace(/(\d)\s*:\s*(?=\d)/g,'$1/')
+  .replace(/\bpluss\b/g,'+').replace(/\bminus\b/g,'-').replace(/\bprosent\b/g,'%').replace(/\s+/g,' ')}
+const ex={mul:(a,b,r)=>!Number.isInteger(a)||!Number.isInteger(b)?`🛒 ${fmt(b)} kg godteri til ${fmt(a)} kr per kg koster ${fmt(r)} kr.`:pick([`🟩 Minecraft: ${fmt(a)} kister med ${fmt(b)} diamanter i hver = ${fmt(r)} diamanter.`,`🍕 ${fmt(a)} pizzaer med ${fmt(b)} biter hver = ${fmt(r)} biter.`,`🤸 ${fmt(a)} runder med ${fmt(b)} hopp hver = ${fmt(r)} hopp.`]),
+  add:(a,b,r)=>pick([`🚗 Bilen kjører ${fmt(a)} km og så ${fmt(b)} km til: ${fmt(r)} km.`,`🟩 Du har ${fmt(a)} blokker og finner ${fmt(b)} til: ${fmt(r)} blokker.`]),
+  sub:(a,b,r)=>r<0?`🌡️ Tenk på et termometer: står det på ${fmt(a)} grader og blir ${fmt(b)} grader kaldere, viser det ${fmt(r)} grader.`:pick([`🟩 Du har ${fmt(a)} blokker og bruker ${fmt(b)} på et hus: ${fmt(r)} igjen.`,`🍪 ${fmt(a)} kjeks, du spiser ${fmt(b)}: ${fmt(r)} igjen.`]),
+  div:(a,b,r)=>pick([`🍬 ${fmt(a)} godteri delt likt på ${fmt(b)} venner: ${fmt(r)} hver.`,`🟩 ${fmt(a)} blokker fordelt på ${fmt(b)} kister: ${fmt(r)} i hver.`])};
+function places(n){const s=String(n),out=[];for(let i=0;i<s.length;i++){const v=+s[i]*10**(s.length-1-i);if(v)out.push(v)}return out}
+function explainMul(a,b){const r=+(a*b).toFixed(10);let s=`<b>${fmt(a)} · ${fmt(b)} = ${fmt(r)}</b><br>`;
+  if(Number.isInteger(a)&&Number.isInteger(b)){
+    if(a>=1&&b>=1&&a<=10&&b<=10)return s+whyMult(a,b)+'<br>'+ex.mul(a,b,r)+(a*b<=100?V.grid(Math.min(a,b),Math.max(a,b)):'');
+    if([10,100,1000].includes(b)||[10,100,1000].includes(a)){const t=[10,100,1000].includes(b)?b:a,o=t===b?a:b;return s+`Gange med ${t}: heng på ${String(t).length-1} null${t>10?'er':''}. ${fmt(o)} → ${fmt(r)}.<br>`+ex.mul(o,t,r)}
+    const big=Math.max(a,b),small=Math.min(a,b);let [x,p]=places(small).length>1?[big,places(small)]:[small,places(big)];
+    if(p.length>1&&p.length<=4)return s+`Del opp i biter du kan:<br>`+p.map(v=>`${fmt(x)} · ${fmt(v)} = ${fmt(x*v)}`).join('<br>')+`<br>Legg sammen: ${p.map(v=>fmt(x*v)).join(' + ')} = ${kk(r)}<br>`+ex.mul(a,b,r);
+    return s+ex.mul(a,b,r)}
+  const da=nDec(a),db=nDec(b),A=Math.round(a*10**da),B=Math.round(b*10**db);
+  return s+`Triks: Ta bort kommaene og gang som vanlig: ${A} · ${B} = ${A*B}.<br>Tell sifre bak komma: ${da} + ${db} = ${da+db}. Flytt kommaet ${da+db} plass${da+db>1?'er':''} til venstre: ${kk(r)}.<br>`+ex.mul(a,b,r)}
+function explainAdd(a,b,minus){const r=+(minus?a-b:a+b).toFixed(10),op=minus?'−':'+';let s=`<b>${fmt(a)} ${op} ${fmt(b)} = ${fmt(r)}</b><br>`;
+  const d=Math.max(nDec(a),nDec(b));
+  if(d>0)return s+`Sett <b>komma under komma</b>, og fyll på med null så begge har like mange sifre bak komma:<br><span style="font-family:var(--f-pixel);white-space:pre">  ${a.toFixed(d).replace('.',',').padStart(8)}<br>${op} ${b.toFixed(d).replace('.',',').padStart(8)}<br>= ${(+r).toFixed(d).replace('.',',').replace('-','−').padStart(8)}</span><br>Regn så fra høyre, akkurat som med vanlige tall.<br>`+(minus?ex.sub(a,b,r):ex.add(a,b,r));
+  if(minus&&r<0)return s+`Du tar bort mer enn du har, så svaret blir under null.<br>`+ex.sub(a,b,r);
+  if(a<10&&b<10)return s+(minus?`Tell bakover fra ${a}: ${b} hopp ned gir ${r}.`:`Start på det største tallet og tell videre.`)+'<br>'+(minus?ex.sub(a,b,r):ex.add(a,b,r));
+  if(!minus){const ta=a-a%10,tb=b-b%10;return s+`Tiere for seg og enere for seg:<br>${ta} + ${tb} = ${ta+tb}<br>${a%10} + ${b%10} = ${a%10+b%10}<br>${ta+tb} + ${a%10+b%10} = ${kk(r)}<br>`+ex.add(a,b,r)}
+  const tb=b-b%10,ob=b%10;return s+`Ta bort tierne først, så enerne:<br>${a} − ${tb} = ${a-tb}${ob?`<br>${a-tb} − ${ob} = ${kk(r)}`:''}<br>Sjekk: ${fmt(r)} + ${fmt(b)} = ${fmt(a)} ✔️<br>`+ex.sub(a,b,r)}
+function explainDiv(a,b){if(b===0)return `Å dele på 0 går ikke! 🙅 Tenk deg ${fmt(a)} godteri som skal deles på 0 venner. Det finnes ingen som kan få noe, så svaret finnes ikke.`;
+  const r=+(a/b).toFixed(10);
+  if(Number.isInteger(a)&&Number.isInteger(b)&&a%b===0)return `<b>${fmt(a)} : ${fmt(b)} = ${fmt(r)}</b><br>Fordi ${fmt(r)} · ${fmt(b)} = ${fmt(a)}. Deling er gange baklengs!<br>${ex.div(a,b,r)}`;
+  if(Number.isInteger(a)&&Number.isInteger(b)&&b<=12&&a<=200){const q=Math.floor(a/b),m=a%b;return `<b>${a} : ${b} = ${q} rest ${m}</b> (eller ${fmt(+(a/b).toFixed(4))} som desimaltall)<br>${q} · ${b} = ${q*b}, og da er det ${m} igjen som ikke kan deles likt.<br>🍬 ${a} godteri på ${b} venner: hver får ${q}, og ${m} blir til overs (de spiser du 😄).`}
+  const rr=+(a/b).toFixed(4);return `<b>${fmt(a)} : ${fmt(b)} ${rr===r?'=':'≈'} ${fmt(rr)}</b><br>Tips: Gjør det enklere ved å gange begge tallene med det samme. Det endrer ikke svaret, akkurat som å dele 2 pizzaer på 4 er det samme som 1 pizza på 2.`}
+function explainFracOp(a,b,op,c,d){if(!b||!d)return 'Nevneren kan ikke være 0.';
+  if(op==='*'){const[n,m]=fr(a*c,b*d);return `<b>${frac(a,b)} · ${frac(c,d)} = ${frTxt(n,m)}</b><br>Gange brøker er lett: teller ganger teller, nevner ganger nevner: ${frac(a*c,b*d)}${n!==a*c?` = ${frTxt(n,m)} (forkortet)`:''}.<br>🍕 Tenk «${frac(a,b)} <i>av</i> ${frac(c,d)} pizza».`}
+  if(op==='/'){const[n,m]=fr(a*d,b*c);return `<b>${frac(a,b)} : ${frac(c,d)} = ${frTxt(n,m)}</b><br>Snu den andre brøken på hodet og gang: ${frac(a,b)} · ${frac(d,c)} = ${frac(a*d,b*c)}${n!==a*d?` = ${frTxt(n,m)}`:''}.`}
+  const L=lcm(b,d),n1=a*L/b,n2=c*L/d,raw=op==='+'?n1+n2:n1-n2,[n,m]=raw?fr(raw,L):[0,1],sg=op==='+'?'+':'−';
+  let s=`<b>${frac(a,b)} ${sg} ${frac(c,d)} = ${raw<0?'−':''}${frTxt(Math.abs(n),m)}</b><br>`;
+  if(b===d)s+=`Samme nevner, så bitene er like store. Bare regn med tellerne: ${a} ${sg} ${c} = ${raw}.`;
+  else s+=`Bitene må være <b>like store</b> først! 🍕 Du kan ikke regne med ${b}-delsbiter og ${d}-delsbiter før pizzaene er skåret likt.<br>Felles nevner: ${L}.<br>${frac(a,b)} = ${frac(n1,L)} og ${frac(c,d)} = ${frac(n2,L)}<br>${frac(n1,L)} ${sg} ${frac(n2,L)} = ${frac(raw,L)}`;
+  if(raw&&m!==L)s+=` = ${frTxt(Math.abs(n),m)} (forkortet)`;
+  if(Math.abs(n)>m&&m>1)s+=`<br>Det er det samme som ${Math.floor(Math.abs(n)/m)} hel${Math.floor(Math.abs(n)/m)>1?'e':''} og ${frac(Math.abs(n)%m,m)}.`;
+  return s+(op==='+'&&b!==d?`<br>⚠️ Vanlig feil: ${frac(a,b)} + ${frac(c,d)} er <i>ikke</i> ${frac(a+c,b+d)}. Nevneren legges aldri sammen!`:'')}
+function explainFrac(a,b){if(!b)return 'Nevneren kan ikke være 0.';const[n,m]=fr(a,b),dec=+(a/b).toFixed(4);
+  let s=`<b>${frac(a,b)}</b> betyr ${a} biter når hele er delt i ${b} like store biter.<br>${V.bar(Math.min(a,b),b)}<br>`;
+  if(n!==a)s+=`Forkortet: ${frac(a,b)} = ${frTxt(n,m)} (del teller og nevner på ${a/n}).<br>`;
+  if(a>b)s+=`Det er mer enn én hel: ${Math.floor(a/b)} hel${Math.floor(a/b)>1?'e':''}${a%b?` og ${frac(a%b,b)}`:''}.<br>`;
+  return s+`Som desimaltall: ${a} : ${b} ${dec===a/b?'=':'≈'} ${kk(dec)}<br>Som prosent: ${fmt(+(a/b*100).toFixed(2))} %<br>🍕 ${frac(a,b)} pizza = ${a} av ${b} biter.`}
+function explainPct(p,x){const r=+(p*x/100).toFixed(6);let s=`<b>${fmt(p)} % av ${fmt(x)} = ${fmt(r)}</b><br>Prosent betyr «av hundre».<br>`;
+  if(p===50)s+=`50 % er halvparten: ${fmt(x)} : 2 = ${kk(r)}.`;else if(p===25)s+=`25 % er en fjerdedel: ${fmt(x)} : 4 = ${kk(r)}.`;else if(p===10)s+=`10 % er en tidel: ${fmt(x)} : 10 = ${kk(r)}.`;else if(p===100)s+='100 % er alt sammen!';
+  else if(p%10===0)s+=`Finn 10 % først: ${fmt(x)} : 10 = ${fmt(x/10)}.<br>${fmt(p)} % er ${p/10} sånne: ${fmt(x/10)} · ${p/10} = ${kk(r)}.`;
+  else if(p%5===0)s+=`Finn 5 % først (halvparten av 10 %): ${fmt(x/20)}.<br>${fmt(p)} % er ${p/5} sånne: ${fmt(x/20)} · ${p/5} = ${kk(r)}.`;
+  else s+=`Finn 1 % først: ${fmt(x)} : 100 = ${fmt(x/100)}.<br>Gang med ${fmt(p)}: ${kk(r)}.`;
+  return s+`<br>🛒 Koster et spill ${fmt(x)} kr og det er ${fmt(p)} % rabatt, sparer du ${fmt(r)} kr og betaler ${fmt(+(x-r).toFixed(2))} kr.`}
+function explainFracOf(n,d,x){if(!d)return 'Nevneren kan ikke være 0.';const one=x/d,r=+(one*n).toFixed(6);
+  return `<b>${frac(n,d)} av ${fmt(x)} = ${fmt(r)}</b><br>Finn først én bit (${frac(1,d)}): ${fmt(x)} : ${d} = ${fmt(+one.toFixed(6))}.<br>${n>1?`Du skal ha ${n} biter: ${fmt(+one.toFixed(6))} · ${n} = ${kk(r)}.<br>`:''}🟩 Har du ${fmt(x)} diamanter og gir bort ${frac(n,d)}, gir du bort ${fmt(r)}.`}
+function evalSteps(tokens){let t=tokens.slice();const steps=[];
+  const show=a=>a.map(x=>typeof x==='number'?fmt(x):({'*':'·','/':':','-':'−'}[x]||x)).join(' ').replace(/\( /g,'(').replace(/ \)/g,')');
+  for(let g=0;g<60&&t.length>1;g++){let lo=0,hi=t.length;const open=t.lastIndexOf('(');
+    if(open>=0){const close=t.indexOf(')',open);if(close<0)return null;lo=open+1;hi=close;if(hi-lo===1){t.splice(open,3,t[lo]);continue}}
+    else if(t.includes(')'))return null;
+    let i=-1;for(let k=lo;k<hi;k++)if(t[k]==='*'||t[k]==='/'){i=k;break}
+    if(i<0)for(let k=lo;k<hi;k++)if(t[k]==='+'||t[k]==='-'){i=k;break}
+    if(i<=lo||typeof t[i-1]!=='number'||typeof t[i+1]!=='number')return null;
+    const a=t[i-1],b=t[i+1],op=t[i];if(op==='/'&&b===0)return {div0:true};
+    t.splice(i-1,3,+({'+':a+b,'-':a-b,'*':a*b,'/':a/b}[op]).toFixed(10));steps.push(show(t))}
+  return t.length===1&&typeof t[0]==='number'?{val:t[0],steps,start:show(tokens)}:null}
+function botMath(s,raw=''){let m;
+  if(m=s.match(/(\d+(?:\.\d+)?)\s*%\s*av\s*(\d+(?:\.\d+)?)/))return explainPct(+m[1],+m[2]);
+  if(m=s.match(/(\d+)\s*\/\s*(\d+)\s*av\s*(\d+(?:\.\d+)?)/))return explainFracOf(+m[1],+m[2],+m[3]);
+  if(m=s.match(/(\d+)\s*\/\s*(\d+)\s*([+\-*\/])\s*(\d+)\s*\/\s*(\d+)/))return explainFracOp(+m[1],+m[2],m[3],+m[4],+m[5]);
+  if(m=s.match(/(\d+(?:\.\d+)?)\s*%/)){if(/brøk|desimal|komma/.test(s)){const p=+m[1],[n,d]=fr(Math.round(p*100),10000);return `<b>${fmt(p)} % = ${frTxt(n,d)} = ${fmt(p/100)}</b><br>Prosent betyr «av hundre», så ${fmt(p)} % = ${frac(fmt(p),100)}${d!==100?` = ${frTxt(n,d)} forkortet`:''}.<br>Som desimaltall: del på 100 → ${kk(p/100)}.`}}
+  const ex=(s.match(/[\d.()+\-*\/ ]+/g)||[]).map(x=>x.trim()).filter(x=>/\d/.test(x)&&/\d\s*[+\-*\/]\s*[\d(]|\)\s*[+\-*\/]/.test(x)).sort((a,b)=>b.length-a.length)[0];
+  if(!ex){if((m=s.match(/(\d+)\s*\/\s*(\d+)/))||(/desimal|prosent/.test(s)&&(m=s.match(/(\d+)\s*\/\s*(\d+)/))))return explainFrac(+m[1],+m[2]);return null}
+  const tk=(ex.match(/\d+(?:\.\d+)?|[()+\-*\/]/g)||[]).map(x=>/\d/.test(x)?+x:x);
+  if(tk.length===3&&typeof tk[0]==='number'&&typeof tk[2]==='number'){const[a,op,b]=tk;
+    if(op==='/'&&Number.isInteger(a)&&Number.isInteger(b)&&b>0&&a%b&&a<b&&b<=100&&!/del|:|÷/.test(raw))return explainFrac(a,b);
+    return op==='*'?explainMul(a,b):op==='/'?explainDiv(a,b):explainAdd(a,b,op==='-')}
+  const r=evalSteps(tk);if(!r)return null;if(r.div0)return explainDiv(1,0);
+  const hasPar=tk.includes('('),mix=tk.some(x=>x==='*'||x==='/')&&tk.some(x=>x==='+'||x==='-');
+  return `<b>${r.start} = ${fmt(r.val)}</b><br>${hasPar||mix?'Husk regnerekkefølgen: <b>1)</b> parenteser, <b>2)</b> gange og dele, <b>3)</b> pluss og minus.<br>':'Regn fra venstre mot høyre:<br>'}${r.steps.map((x,i)=>`Steg ${i+1}: = ${x}`).join('<br>')}<br>🚗 Som en bilmotor: delene må monteres i riktig rekkefølge, ellers starter den ikke!`}
+const TOPICS=[[/fellesnevner|(pluss|minus|legge sammen|trekke fra).*brøk|brøk.*(pluss|minus)/,'t6-brokregn'],[/forkort|utvid|like brøker/,'t5-likebrok'],[/blandet tall|uekte/,'t5-blandet'],[/brøkdel av|del av et antall/,'t6-brokav'],
+  [/brøk.*(desimal|prosent)|(desimal|prosent).*brøk/,'t6-bdp'],[/brøk|teller|nevner|tredjedel|fjerdedel|halvdel/,'t4-brok'],[/prosent|%|rabatt|tilbud/,'t5-prosent'],[/(gange|dele).*desimal|desimal.*(gange|dele)/,'t6-desgange'],
+  [/(pluss|minus|regne).*desimal|desimal.*(pluss|minus)/,'t5-desregn'],[/plassverdi|hundredel|tusendel/,'t5-desimal'],[/desimal|komma|tidel/,'t4-desimal'],[/\brest\b/,'t4-rest'],[/(gange|dele).*(10|hundre|tusen)\b/,'t6-ti'],
+  [/gangetabell|gangen|gange|ganging|multipli/,'t3-gange2'],[/dele|deling|divisjon|fordel/,'t3-deling'],[/negativ|under null|minusgrader/,'t5-negative'],[/gjennomsnitt|snitt/,'t5-snitt'],[/median|typetall|variasjonsbredde/,'t6-stat'],
+  [/sannsynlig|terning|sjanse/,'t6-sanns'],[/rekkefølge|parentes/,'t6-rekkefolge'],[/likning|ligning|ukjent/,'t5-ukjent'],[/uttrykk|formel/,'t6-uttrykk'],[/vinkel|grader/,'t6-vinkler'],[/trekant|parallellogram/,'t6-trekant'],
+  [/areal|omkrets/,'t4-areal'],[/volum|liter|kubikk/,'t6-volum'],[/målestokk|kart/,'t6-malestokk'],[/koordinat|akse/,'t4-koord'],[/klokk|tidsregning|minutt|\btimer?\b/,'t4-tid'],[/symmetri|speil/,'t3-symmetri'],
+  [/algoritm|program|koding/,'t4-algoritme'],[/avrund|store tall|million/,'t4-store'],[/mente|låne|låning|oppstilling/,'t3-oppstilling'],[/diagram|tabell/,'t3-diagram'],[/penger|kroner|veksle/,'t2-penger'],
+  [/mønster|tallfølge/,'t2-monster'],[/figur|sirkel|kvadrat|rektangel/,'t2-former'],[/lengde|meter|centimeter/,'t2-lengde'],[/vekt|kilo|gram/,'t3-maling'],[/pluss|minus|addisjon|subtraksjon/,'t2-pluss100']];
+function findTopic(s){const hit=TOPICS.find(([re])=>re.test(s));if(hit)return U.find(u=>u.id===hit[1]);
+  const words=s.split(/[^a-zæøå]+/).filter(w=>w.length>3&&!/^(hvordan|hvorfor|forklar|kan du|hjelp|skjønner|ikke|noen|dette|hvilken)$/.test(w));if(!words.length)return null;
+  let best=null,bs=0;U.forEach(u=>{const txt=(u.title+' '+u.cards.map(c=>c.h+' '+strip(c.t)).join(' ')).toLowerCase();const sc=words.reduce((a,w)=>a+(u.title.toLowerCase().includes(w)?3:txt.includes(w)?1:0),0);if(sc>bs){bs=sc;best=u}});return bs>=2?best:null}
+function topicReply(u,pre=''){const c=u.cards[0];return `${pre}<b>${u.icon} ${u.title}</b><br><b>${c.h}</b><div>${c.t}</div>${c.v?`<div class="vis-box">${c.v}</div>`:''}<div class="sugg" style="margin-top:10px"><button class="chip" data-learn="${u.id}">📖 Les hele forklaringen (${u.cards.length} kort)</button><button class="chip" data-sugg="${esc('Oppgave: '+u.title)}">✏️ Gi meg en oppgave</button></div>`}
+function tableReply(n){return `<b>${n}-gangen</b> 🟩<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 16px;font-family:var(--f-pixel);margin:6px 0">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<span>${i} · ${n} = <b>${i*n}</b></span>`).join('')}</div>💡 <b>Triks:</b> ${TRICK[n]||'Del opp tallet: '+n+' · 6 = '+n+' · 5 + '+n+'.'}`+chips([`Øv på ${n}-gangen`,'Gi meg en oppgave'])}
+function quizFrom(u,table){for(let i=0;i<40;i++){let q;
+    if(table){const b=rnd(1,10);q=N(`${table} · ${b} = ?`,table*b,{fact:[table,b],hint:tipFor(table,b),why:whyMult(table,b)})}
+    else if(u){try{q=u.gen(rnd(1,2))}catch(e){q=null}}
+    else{const weak=Object.entries(S.facts).filter(([k,f])=>f.w>f.c/2).map(([k])=>k.split('x').map(Number));let x,y;if(weak.length&&Math.random()<.7)[x,y]=pick(weak);else{x=rnd(3,9);y=rnd(2,10)}if(Math.random()<.5)[x,y]=[y,x];q=N(`${x} · ${y} = ?`,x*y,{fact:[x,y],hint:tipFor(x,y),why:whyMult(x,y)})}
+    if(q&&q.kind!=='choice'||q&&q.opts&&!q.opts.some(o=>/[<]/.test(o)))return q}return null}
+function askQuiz(u,table){const q=quizFrom(u,table);if(!q)return 'Fant ingen oppgave akkurat nå. Prøv et annet tema!';botQuiz={q,tries:0,u,table};
+  return `✏️ <b>Oppgave${u?' i '+esc(u.title):table?' i '+table+'-gangen':''}:</b><div style="font-size:20px;font-weight:800;margin:6px 0">${q.q}</div>${q.vis?`<div class="vis-box">${q.vis}</div>`:''}${q.kind==='choice'?chips(q.opts):`<div class="note">${fmtHint[q.kind]||'Skriv svaret ditt.'}</div>`}${chips(['💡 Hint','Vis svaret'])}`}
+function quizAnswer(t,raw){const z=botQuiz,q=z.q;
+  if(/hint|tips|hjelp|vet ikke|aner ikke/.test(t))return `💡 ${q.hint||'Prøv å dele opp oppgaven i mindre biter.'}<br>Prøv igjen!`+chips(['Vis svaret']);
+  if(/vis svaret|fasit|gi opp|svaret/.test(t)){botQuiz=null;recordFact(q,false);save();return `Svaret er <b>${esc(showAns(q))}</b>.<br>${q.why||''}<br>Ingen fare, nå vet du det! 💪`+chips(['Ny oppgave','Noe annet'])}
+  if(check(q,raw.trim())){botQuiz=null;recordFact(q,true);S.stats.correct++;addXP(2);const nw=checkTrophies();save();nw.forEach(x=>toast('Ny pokal: '+x.n+' '+x.ic));
+    return `${pick(YAY)} <b>${esc(showAns(q))}</b> er riktig! <span class="note">+2 XP</span><br>${q.why||''}`+chips(['Ny oppgave','Noe annet'])}
+  z.tries++;if(z.tries<2)return `Nesten! Ikke ${esc(raw.trim())}. 🤔<br>💡 ${q.hint||'Sjekk utregningen en gang til.'}<br>Prøv én gang til!`;
+  botQuiz=null;recordFact(q,false);S.stats.wrong++;save();return `Det riktige svaret er <b>${esc(showAns(q))}</b>.<br>${q.why||''}<br>Feil er bare trening for hjernen 🧠. Vi tar en ny!`+chips(['Ny oppgave','Noe annet'])}
+function botReply(raw){const t=raw.toLowerCase().trim(),s=botNorm(raw),name=CFG.childName?' '+esc(CFG.childName):'';let m;
+  if(botQuiz){const looksQ=/\?$|^(hva|hvordan|hvorfor|hvem|kan du|forklar|fortell)\b|oppgave|noe annet|vits/.test(t);
+    if(!looksQ&&(/\d/.test(t)||/hint|tips|hjelp|vet ikke|aner ikke|svaret|fasit|gi opp/.test(t)||botQuiz.q.kind==='choice'))return quizAnswer(t,raw)}
+  if(m=raw.match(/^oppgave:\s*(.+)$/i)){const u=U.find(x=>x.title.toLowerCase()===m[1].trim().toLowerCase());if(u)return askQuiz(u)}
+  if(/^noe annet/.test(t)){botQuiz=null;return 'Klart! Hva vil du gjøre nå? 😊'+chips(BOT_SUGG.slice(0,6))}
+  if(/^(hei|hallo|heisann|hey|hi|halla|yo|god morgen|god dag|morn)\b/.test(t)&&t.length<25)return `Hei${name}! 👋 Jeg er Kubo. Hva skal vi regne på i dag?`+chips(BOT_SUGG.slice(0,5));
+  if(/vits|spøk|noe morsomt/.test(t))return '😄 '+pick(JOKES)+chips(['En vits til','Gi meg en oppgave']);
+  if(/^(takk|tusen takk|tnx|ok takk)/.test(t))return 'Bare hyggelig! 💚 Du gjør det kjempebra.'+chips(['Gi meg en oppgave']);
+  if(/hvem er du|hva heter du|er du (en )?(robot|ai|menneske|ekte)|hva kan du/.test(t))return `Jeg er Kubo, mattehjelperen din 🟩. Jeg er en enkel robot, så jeg kan ikke snakke om alt, men jeg kan:<br>• regne ut stykker og vise hvordan (skriv f.eks. <b>8 · 7</b> eller <b>3/4 + 1/8</b>)<br>• forklare temaer (skriv f.eks. <b>brøk</b> eller <b>prosent</b>)<br>• gi deg oppgaver og rette dem (skriv <b>oppgave</b>)`+chips(BOT_SUGG.slice(0,4));
+  if(/streak|xp\b|poeng|hvor mange (kroner|pokaler|diamanter)/.test(t))return `Status: 🔥 ${S.streak.n} dager på rad · ⚡ ${S.xp} XP (${todayXP()}/${GOAL} i dag) · 👑 ${totalCrowns()} kroner · 🏆 ${Object.keys(S.trophies).length} pokaler. Sterkt!`+chips(['Gi meg en oppgave']);
+  const mood=/kjedelig|orker ikke|gidder ikke|vanskelig|skjønner ikke|forstår ikke|klarer ikke|hater|dum|teit|lei/.test(t);
+  if(m=t.match(/(\d+)\s*-?\s*gangen/)||t.match(/\b(to|tre|fire|fem|seks|sju|syv|åtte|ni|ti)\s*-?\s*gangen/)){const n=TNAME[m[1]]||+m[1];if(n>=1&&n<=20){if(/øv|oppgave|test/.test(t))return askQuiz(null,n);return tableReply(n)}}
+  const math=/\d/.test(s)?botMath(s,t):null;if(math)return math+chips(['Gi meg en oppgave','Noe annet']);
+  if(/oppgave|quiz|øv\b|øve|test meg|utfordring|spørsmål til meg/.test(t)){const u=findTopic(t.replace(/oppgave|minecraft/g,''));if(/^ny oppgave/.test(t)&&!u&&lastQuiz)return askQuiz(lastQuiz.u,lastQuiz.table);return askQuiz(u)}
+  const u=findTopic(t);if(u)return topicReply(u,mood?'Det er helt vanlig å synes det er vanskelig! Selv Steve måtte lære å hogge tre før han kunne bygge borg 🪓. Vi tar det steg for steg:<br><br>':'');
+  if(mood)return `Jeg skjønner deg${name} 💚 Matte kan føles som å grave gjennom obsidian med neven. Men hjernen din blir sterkere hver gang du prøver, akkurat som muskler i turn 🤸.<br>Skal vi ta én kort og lett oppgave? Bare én!`+chips(['Ja, gi meg en oppgave','Fortell en vits']);
+  if(/minecraft|bil|turn|fotball|mat\b|pizza/.test(t))return 'Det liker jeg også! 😄 Vil du ha en mattoppgave med det? Skriv f.eks. «gi meg en oppgave i brøk».'+chips(['Gi meg en oppgave','Hva er en brøk?']);
+  return `Hmm, det skjønte jeg ikke helt 🤔 Jeg er en enkel mattebot. Prøv å skrive et regnestykke (f.eks. <b>6 · 7</b>, <b>3/4 + 1/8</b>, <b>20 % av 150</b>) eller et tema (f.eks. <b>brøk</b>, <b>desimaltall</b>, <b>gangetabellen</b>).`+chips(BOT_SUGG.slice(0,6))}
+let lastQuiz=null;
+function botSend(text){text=text.trim();if(!text)return;chat.push({role:'user',content:text});const was=botQuiz;let html;
+  try{html=botReply(text)}catch(e){html='Oi, der krasjet jeg som en Creeper 💥. Prøv å skrive det på en annen måte.'}
+  if(botQuiz)lastQuiz={u:botQuiz.u,table:botQuiz.table};else if(was)lastQuiz={u:was.u,table:was.table};
+  S.stats.asked=(S.stats.asked||0)+1;save();
+  chat.push({role:'assistant',html});render()}
+function viewBot(){if(bokOpen)return `<button class="btn ghost small" id="bokClose" style="margin-bottom:12px">◀ Tilbake til Kubo-chat</button>`+viewBok();
+  return `<div class="stack"><div class="card"><div class="kubo-say">${KUBO(56)}<div style="min-width:0"><h2 style="font-size:24px">Spør Kubo</h2><p class="muted" style="margin:0">Skriv et regnestykke eller et tema, så viser Kubo hvordan. Du kan også be om en oppgave!</p></div></div><button class="btn ghost small" id="bokOpen" style="margin-top:10px">📖 Bla i matteboka</button></div>
+  <div class="chat" id="chat">${chat.length?chat.map(m=>`<div class="msg ${m.role==='user'?'me':'bot'}">${m.role==='user'?esc(m.content):m.html||md(m.content||'')}</div>`).join(''):`<div class="msg bot">Hei${CFG.childName?' '+esc(CFG.childName):''}! 👋 Hva lurer du på? Trykk på en knapp eller skriv selv.</div><div class="sugg">${BOT_SUGG.map(s=>`<button class="chip" data-sugg="${esc(s)}">${esc(s)}</button>`).join('')}</div>`}</div>
+  <div class="ask-row"><textarea id="askIn" placeholder="${botQuiz?'Skriv svaret ditt her …':'F.eks. 7 · 8 eller «brøk» …'}" aria-label="Skriv til Kubo" inputmode="text"></textarea><button class="btn sky" id="askBtn">Send</button></div>
+  ${chat.length?'<button class="btn ghost small" id="newChat" style="align-self:flex-start">Ny samtale</button>':''}</div>`}
+document.addEventListener('click',e=>{if(e.target.id==='bokOpen'){bokOpen=true;render();scrollTo({top:0})}if(e.target.id==='bokClose'){bokOpen=false;render()}if(e.target.id==='newChat')botQuiz=null});
 
 /* parents */
 let resetArm=false;
