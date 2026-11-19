@@ -1,0 +1,1159 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#3FA34D">
+<meta name="description" content="Morsom matte for 1.â€“6. trinn med Kubo.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mattekraft">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body><title>Mattekraft</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@500;700;800;900&family=Silkscreen&display=swap">
+<style>
+/* Layout: one-column "world map" of block-nodes (Duolingo-style path), sticky stats bar on top, app nav fixed at the bottom. */
+:root{
+  --bg:#EEF5E8; --surface:#FFFFFF; --surface-2:#F6FAF2; --ink:#1E2A1B; --muted:#5D6C58; --line:#D5E1CC;
+  --grass:#3FA34D; --grass-l:#6CCB5F; --grass-d:#2B7A36; --dirt:#8B5A2B; --dirt-d:#6A421C;
+  --sky:#3E9FDB; --sky-d:#2B7DB3; --gold:#F2B705; --gold-d:#C48F00; --red:#E5484D; --red-d:#B5333A;
+  --ok-bg:#DDF5DA; --bad-bg:#FDE2E1; --eye:#18200F;
+  --f-display:"Lilita One","Arial Rounded MT Bold","Trebuchet MS",sans-serif;
+  --f-body:"Nunito","Segoe UI",system-ui,sans-serif;
+  --f-pixel:"Silkscreen","Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111711; --surface:#1A221A; --surface-2:#202A20; --ink:#E8F1E4; --muted:#9BB096; --line:#2D3A2C;
+  --grass:#4FB95C; --grass-l:#79D46B; --grass-d:#2F8A3C; --dirt:#B07A45; --dirt-d:#86592C;
+  --sky:#57B4EC; --sky-d:#3289C0; --gold:#FFC83D; --gold-d:#C9971A; --red:#FF6B6E; --red-d:#C24448;
+  --ok-bg:#1D3A1F; --bad-bg:#3F1E1F; --eye:#0E140C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111711; --surface:#1A221A; --surface-2:#202A20; --ink:#E8F1E4; --muted:#9BB096; --line:#2D3A2C;
+  --grass:#4FB95C; --grass-l:#79D46B; --grass-d:#2F8A3C; --dirt:#B07A45; --dirt-d:#86592C;
+  --sky:#57B4EC; --sky-d:#3289C0; --gold:#FFC83D; --gold-d:#C9971A; --red:#FF6B6E; --red-d:#C24448;
+  --ok-bg:#1D3A1F; --bad-bg:#3F1E1F; --eye:#0E140C; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;letter-spacing:.3px;text-wrap:balance;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:2px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:12px;padding-block:8px}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-size:22px;color:var(--grass-d)}
+:root[data-theme="dark"] .brand{color:var(--grass-l)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .brand{color:var(--grass-l)}}
+.stats{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.stat{display:flex;align-items:center;gap:4px;font-family:var(--f-pixel);font-size:13px;padding:4px 8px;border-radius:10px;background:var(--surface-2);border:2px solid var(--line);font-variant-numeric:tabular-nums}
+@media (max-width:420px){.brand span{display:none}}
+main{padding-block:16px 120px}
+/* nav */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:2px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav .wrap{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding-block:6px}
+.nav button{background:none;border:2px solid transparent;border-radius:12px;padding:4px 2px;display:flex;flex-direction:column;align-items:center;font-weight:800;font-size:12px;color:var(--muted)}
+.nav button .ic{font-size:22px;line-height:1.1}
+.nav button[aria-current="page"]{color:var(--sky-d);border-color:var(--sky);background:var(--surface-2)}
+:root[data-theme="dark"] .nav button[aria-current="page"]{color:var(--sky)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .nav button[aria-current="page"]{color:var(--sky)}}
+/* buttons */
+.btn{border:none;border-radius:14px;padding:12px 18px;font-weight:900;font-size:16px;letter-spacing:.4px;text-transform:uppercase;background:var(--grass);color:#fff;box-shadow:0 4px 0 var(--grass-d);transition:transform .06s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--grass-d)}
+.btn[disabled]{background:var(--line);box-shadow:0 4px 0 var(--line);color:var(--muted);cursor:not-allowed}
+.btn.sky{background:var(--sky);box-shadow:0 4px 0 var(--sky-d)}
+.btn.gold{background:var(--gold);box-shadow:0 4px 0 var(--gold-d);color:#2A1E00}
+.btn.red{background:var(--red);box-shadow:0 4px 0 var(--red-d)}
+.btn.ghost{background:var(--surface);color:var(--ink);box-shadow:0 4px 0 var(--line);border:2px solid var(--line)}
+.btn.small{padding:8px 12px;font-size:13px}
+.btn.block{width:100%}
+.chip{border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-weight:800;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--sky);border-color:var(--sky-d);color:#fff}
+.card{background:var(--surface);border:2px solid var(--line);border-radius:18px;padding:16px}
+.muted{color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:12px}
+/* path */
+.courses{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;scrollbar-width:thin}
+.course-head{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:var(--grass);color:#fff;border-radius:18px;padding:16px;box-shadow:0 5px 0 var(--grass-d)}
+.course-head h2{font-size:26px}
+.course-head>svg{background:var(--surface);border-radius:16px;padding:6px;box-shadow:0 3px 0 var(--grass-d)}
+.course-head p{margin:2px 0 0;opacity:.95;font-weight:700}
+.prize{margin-top:12px;display:flex;gap:12px;align-items:center;background:var(--surface);border:2px dashed var(--gold);border-radius:16px;padding:12px}
+.prize .chest{font-size:34px}
+.prize b{display:block}
+.meter{height:14px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;background:var(--gold);border-radius:99px;transition:width .4s}
+.path{display:flex;flex-direction:column;align-items:center;gap:18px;padding-block:24px}
+.node-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;width:150px}
+.node{width:80px;height:76px;border-radius:18px;border:none;font-size:36px;display:grid;place-items:center;position:relative;background:var(--surface);box-shadow:0 6px 0 var(--line),inset 0 0 0 3px var(--line)}
+.node.started{background:var(--grass);box-shadow:0 6px 0 var(--grass-d)}
+.node.started::before{content:"";position:absolute;left:0;right:0;top:0;height:16px;border-radius:18px 18px 0 0;background:var(--grass-l)}
+.node.done{background:var(--gold);box-shadow:0 6px 0 var(--gold-d)}
+.node.done::before{content:"";position:absolute;left:0;right:0;top:0;height:16px;border-radius:18px 18px 0 0;background:rgba(255,255,255,.35)}
+.node span{position:relative}
+.node:active{transform:translateY(4px);box-shadow:0 2px 0 var(--line)}
+.node-label{font-weight:800;font-size:14px;text-align:center;line-height:1.2}
+.crowns{display:flex;gap:3px}
+.crowns i{width:12px;height:12px;border-radius:3px;background:var(--line);display:block}
+.crowns i.on{background:var(--gold);box-shadow:0 2px 0 var(--gold-d)}
+/* sheet / overlay */
+.overlay{position:fixed;inset:0;z-index:40;background:rgba(10,20,10,.55);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:760px;max-height:92%;overflow:auto;border-radius:22px 22px 0 0;padding:20px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.full{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.full-head{display:flex;align-items:center;gap:12px;padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));max-width:760px;width:100%;margin:0 auto}
+.x{background:none;border:none;font-size:26px;color:var(--muted);padding:4px 8px}
+.prog{flex:1;height:16px;background:var(--line);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--grass);border-radius:99px;transition:width .35s;box-shadow:inset 0 -4px 0 rgba(0,0,0,.12)}
+.full-body{flex:1;overflow:auto;width:100%}
+.full-body .wrap{padding-block:8px 24px}
+.qtext{font-size:22px;font-weight:800;line-height:1.35;margin:6px 0 14px}
+.vis-box{display:flex;justify-content:center;margin:8px 0 16px;overflow-x:auto}
+.vis{max-width:100%;height:auto}
+.answer{width:100%;font:inherit;font-size:28px;font-weight:900;text-align:center;padding:14px;border-radius:16px;border:3px solid var(--line);background:var(--surface);color:var(--ink)}
+.answer:focus{border-color:var(--sky);outline:none}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.opt{border:3px solid var(--line);background:var(--surface);border-radius:16px;padding:14px 10px;font-size:20px;font-weight:900;box-shadow:0 4px 0 var(--line);min-height:60px}
+.opt[aria-pressed="true"]{border-color:var(--sky);background:var(--surface-2);box-shadow:0 4px 0 var(--sky)}
+.opt.right{border-color:var(--grass);background:var(--ok-bg)}
+.opt.wrong{border-color:var(--red);background:var(--bad-bg)}
+.fmt-hint{font-size:13px;color:var(--muted);text-align:center;margin-top:6px}
+.foot{border-top:2px solid var(--line);background:var(--surface)}
+.foot .wrap{padding-block:14px;display:flex;flex-direction:column;gap:10px}
+.foot.ok{background:var(--ok-bg);border-color:var(--grass)}
+.foot.bad{background:var(--bad-bg);border-color:var(--red)}
+.fb-title{font-family:var(--f-display);font-size:24px}
+.foot.ok .fb-title{color:var(--grass-d)}
+.foot.bad .fb-title{color:var(--red)}
+:root[data-theme="dark"] .foot.ok .fb-title{color:var(--grass-l)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .foot.ok .fb-title{color:var(--grass-l)}}
+.why{font-weight:700}
+.kubo-say{display:flex;gap:10px;align-items:flex-start}
+.bubble{background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:10px 14px;position:relative;min-width:0;flex:1;white-space:normal;overflow-wrap:anywhere}
+.combo{font-family:var(--f-pixel);color:var(--dirt);font-size:14px;white-space:nowrap}
+/* learn cards */
+.lcard h3{font-size:24px;color:var(--grass-d);margin-bottom:6px}
+:root[data-theme="dark"] .lcard h3{color:var(--grass-l)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .lcard h3{color:var(--grass-l)}}
+.lcard p{margin:0 0 10px;font-size:18px;max-width:62ch}
+.trick{background:var(--surface-2);border-left:6px solid var(--gold);border-radius:10px;padding:10px 12px;font-weight:700;margin:8px 0}
+.dots{display:flex;gap:6px;justify-content:center;margin:10px 0}
+.dots i{width:10px;height:10px;border-radius:3px;background:var(--line)}
+.dots i.on{background:var(--grass)}
+/* trophies */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.trophy{text-align:center;padding:12px;border-radius:16px;border:2px solid var(--line);background:var(--surface)}
+.trophy .t-ic{font-size:40px;line-height:1.2}
+.trophy.locked{opacity:.45;filter:grayscale(1)}
+.trophy b{display:block;font-size:15px}
+.trophy small{color:var(--muted);display:block;line-height:1.3}
+.fgrid{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:3px;font-family:var(--f-pixel);font-size:11px;text-align:center;max-width:460px}
+.fgrid div{aspect-ratio:1;display:grid;place-items:center;border-radius:5px}
+.fgrid .h{font-weight:700;color:var(--muted)}
+.lv0{background:var(--line)} .lv1{background:#F4C2C2;color:#5a1010} .lv2{background:#F7E08A;color:#3d3000} .lv3{background:var(--grass-l);color:#0d2a0d} .lv4{background:var(--grass);color:#fff}
+/* chat */
+.chat{display:flex;flex-direction:column;gap:12px}
+.msg{max-width:88%;padding:10px 14px;border-radius:16px;font-size:17px;overflow-wrap:anywhere}
+.msg.me{align-self:flex-end;background:var(--sky);color:#fff;border-bottom-right-radius:4px}
+.msg.bot{align-self:flex-start;background:var(--surface);border:2px solid var(--line);border-bottom-left-radius:4px}
+.ask-row{display:flex;gap:8px}
+.ask-row textarea{flex:1;min-width:0;font:inherit;font-size:17px;border:3px solid var(--line);border-radius:14px;padding:10px;background:var(--surface);color:var(--ink);resize:vertical;min-height:52px}
+.sugg{display:flex;gap:8px;flex-wrap:wrap}
+/* sprint */
+.big-timer{font-family:var(--f-pixel);font-size:42px;text-align:center}
+.sprint-q{font-family:var(--f-display);font-size:56px;text-align:center}
+/* misc */
+.center{text-align:center}
+.end-ic{font-size:84px;text-align:center;animation:pop .6s ease-out}
+@keyframes pop{0%{transform:scale(.3)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.shake{animation:shake .3s}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)}
+label.btn{display:inline-block;cursor:pointer}
+.thumb{display:block;max-width:220px;max-height:220px;border-radius:12px;margin-bottom:6px;object-fit:cover}
+.daily{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
+.greet-kubo{display:flex;justify-content:center;align-items:flex-start;position:relative;padding-top:6px}
+.bob{animation:bob 2.4s ease-in-out infinite}
+.wave{font-size:48px;display:inline-block;transform-origin:70% 80%;animation:wave 1.6s ease-in-out infinite;margin-left:-8px}
+@keyframes wave{0%,60%,100%{transform:rotate(0)}10%,30%{transform:rotate(18deg)}20%,40%{transform:rotate(-12deg)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:80}
+.coltab{font-family:var(--f-pixel);font-size:26px;border-collapse:collapse;margin:0 auto}
+.coltab td{padding:2px 8px;text-align:center;min-width:28px}
+.coltab tr.sum td{border-top:3px solid var(--ink)}
+input.pin{font-family:var(--f-pixel);letter-spacing:6px;font-size:22px;text-align:center;width:160px;padding:10px;border-radius:12px;border:3px solid var(--line);background:var(--surface);color:var(--ink)}
+.field{display:flex;flex-direction:column;gap:4px}
+.field input{font:inherit;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--ink)}
+.status-pill{font-size:12px;font-weight:900;padding:2px 10px;border-radius:99px;text-transform:uppercase;letter-spacing:.5px}
+.pill-ok{background:var(--grass);color:#fff} .pill-wait{background:var(--line);color:var(--muted)} .pill-gold{background:var(--gold);color:#2A1E00}
+.note{font-size:14px;color:var(--muted)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:800;z-index:90;max-width:90%}
+</style>
+
+<div class="top"><div class="wrap">
+  <div class="brand" id="brand"></div>
+  <div class="stats" id="stats"></div>
+</div></div>
+<main class="wrap" id="main"></main>
+<nav class="nav" aria-label="Hovedmeny"><div class="wrap" id="nav"></div></nav>
+<div id="layer"></div>
+<canvas id="confetti" hidden></canvas>
+
+<script>
+/* ============ helpers ============ */
+const $=s=>document.querySelector(s);
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const gcd=(a,b)=>{a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b]}return a};
+const fmt=x=>String(+(+x).toFixed(6)).replace('.',',').replace('-','−');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const strip=h=>{const d=document.createElement('div');d.innerHTML=h;return d.textContent.replace(/\s+/g,' ').trim()};
+const todayStr=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const frac=(n,d)=>`<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.05;margin:0 2px"><span>${n}</span><span style="border-top:2px solid currentColor;padding:0 3px">${d}</span></span>`;
+
+/* questions */
+const N=(q,a,o={})=>({q,a,kind:'num',...o});
+const C=(q,a,wrongs,o={})=>{a=String(a);const w=[...new Set(wrongs.map(String))].filter(x=>x!==a).slice(0,3);return {q,a,kind:'choice',opts:shuffle([a,...w]),...o}};
+const F=(q,n,d,o={})=>({q,a:[n,d],kind:'frac',show:`${n}/${d}`,...o});
+function parseNum(s){s=String(s).trim().replace(/\s/g,'').replace(',','.').replace('−','-');if(!/^-?\d*\.?\d+$/.test(s))return NaN;return parseFloat(s)}
+function parseFrac(s){s=String(s).replace(/\s/g,'').replace('−','-');const m=s.match(/^(-?\d+)\/(\d+)$/);if(m)return{n:+m[1],d:+m[2]};const x=parseNum(s);return isNaN(x)?null:{n:x,d:1}}
+const ints=s=>(String(s).replace('−','-').match(/-?\d+/g)||[]).map(Number);
+function check(q,input){
+  switch(q.kind){
+    case 'num':{const x=parseNum(input);return !isNaN(x)&&Math.abs(x-q.a)<1e-9}
+    case 'choice':return input===q.a;
+    case 'frac':{const f=parseFrac(input);if(!f||f.d===0)return false;const[an,ad]=q.a;if(q.exact)return f.n===an&&f.d===ad;return Math.abs(f.n/f.d-an/ad)<1e-9}
+    case 'mixed':{const v=ints(input);return v.length===3&&v[0]===q.a[0]&&v[1]===q.a[1]&&v[2]===q.a[2]}
+    default:{const v=ints(input);return v.length===2&&v[0]===q.a[0]&&v[1]===q.a[1]}
+  }
+}
+const showAns=q=>q.show!=null?q.show:(q.kind==='num'?fmt(q.a):String(q.a));
+const fmtHint={num:'Skriv et tall. Bruk komma for desimaler, f.eks. 2,5',frac:'Skriv brøk med skråstrek, f.eks. 3/4',pair:'Skriv f.eks. 3 rest 2',coord:'Skriv f.eks. (3,5)',time:'Skriv klokkeslett, f.eks. 14:30',mixed:'Skriv hele, mellomrom, brøk, f.eks. 1 3/4'};
+
+/* ============ visuals (inline SVG) ============ */
+const sv=(w,h,inner,label='')=>`<svg class="vis" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${esc(label)}">${inner}</svg>`;
+const T=(x,y,t,o='')=>`<text x="${x}" y="${y}" style="fill:var(--ink);font:800 14px var(--f-body)" text-anchor="middle" ${o}>${t}</text>`;
+function block(x,y,s,top='var(--grass-l)',body='var(--dirt)'){return `<rect x="${x}" y="${y}" width="${s}" height="${s}" rx="2" style="fill:${body};stroke:var(--dirt-d);stroke-width:1.5"/><rect x="${x}" y="${y}" width="${s}" height="${Math.max(3,s*.3)}" rx="2" style="fill:${top}"/>`}
+const V={
+  tensOnes(n){const h=Math.floor(n/100),t=Math.floor(n%100/10),o=n%10,c=7,H=10*c;let x=6,g='';
+    for(let i=0;i<h;i++){g+=`<rect x="${x}" y="6" width="${H}" height="${H}" style="fill:var(--sky);stroke:var(--sky-d);stroke-width:1.5"/>`;for(let k=1;k<10;k++)g+=`<line x1="${x+k*c}" y1="6" x2="${x+k*c}" y2="${6+H}" style="stroke:var(--sky-d);stroke-width:.8"/><line x1="${x}" y1="${6+k*c}" x2="${x+H}" y2="${6+k*c}" style="stroke:var(--sky-d);stroke-width:.8"/>`;x+=H+10}
+    for(let i=0;i<t;i++){g+=`<rect x="${x}" y="6" width="${c}" height="${H}" style="fill:var(--grass);stroke:var(--grass-d);stroke-width:1.5"/>`;for(let k=1;k<10;k++)g+=`<line x1="${x}" y1="${6+k*c}" x2="${x+c}" y2="${6+k*c}" style="stroke:var(--grass-d);stroke-width:.8"/>`;x+=c+6}
+    x+=6;for(let i=0;i<o;i++){const col=Math.floor(i/5),row=i%5;g+=`<rect x="${x+col*(c+4)}" y="${6+H-(row+1)*(c+5)+5}" width="${c}" height="${c}" style="fill:var(--gold);stroke:var(--gold-d);stroke-width:1.2"/>`}
+    x+=(o?Math.ceil(o/5)*(c+4):0)+6;return sv(Math.max(x,60),H+12,g,`${h} hundrere, ${t} tiere, ${o} enere`)},
+  grid(r,c,opt={}){const s=opt.s||Math.min(26,Math.floor(260/Math.max(r,c)));let g='';for(let i=0;i<r;i++)for(let j=0;j<c;j++)g+=block(4+j*(s+3),4+i*(s+3),s,opt.top,opt.body);
+    return sv(8+c*(s+3),8+r*(s+3),g,`${r} rader med ${c}`)},
+  bar(n,d,color='var(--grass)'){const W=300,h=46;let g='';for(let i=0;i<d;i++){const x=4+i*W/d;g+=`<rect x="${x}" y="4" width="${W/d}" height="${h}" style="fill:${i<n?color:'var(--surface)'};stroke:var(--ink);stroke-width:2"/>`}return sv(W+8,h+8,g,`${n} av ${d} deler`)},
+  pie(n,d){const cx=70,cy=70,r=60;let g=`<circle cx="${cx}" cy="${cy}" r="${r+5}" style="fill:var(--dirt)"/>`;
+    if(d===1)g+=`<circle cx="${cx}" cy="${cy}" r="${r}" style="fill:${n?'var(--gold)':'var(--surface)'};stroke:var(--dirt-d);stroke-width:2"/>`;
+    else for(let i=0;i<d;i++){const a0=-Math.PI/2+2*Math.PI*i/d,a1=-Math.PI/2+2*Math.PI*(i+1)/d;const x0=cx+r*Math.cos(a0),y0=cy+r*Math.sin(a0),x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
+      g+=`<path d="M${cx} ${cy}L${x0.toFixed(1)} ${y0.toFixed(1)}A${r} ${r} 0 ${d===2?0:0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}Z" style="fill:${i<n?'var(--gold)':'var(--surface)'};stroke:var(--dirt-d);stroke-width:2"/>`;
+      if(i<n){const am=(a0+a1)/2;g+=`<circle cx="${(cx+r*.6*Math.cos(am)).toFixed(1)}" cy="${(cy+r*.6*Math.sin(am)).toFixed(1)}" r="${Math.max(3,18/Math.sqrt(d))}" style="fill:var(--red)"/>`}}
+    return sv(140,140,g,`Pizza delt i ${d}, ${n} biter markert`)},
+  numline(min,max,opt={}){const W=340,y=40,x0=20,x1=W-20,X=v=>x0+(v-min)/(max-min)*(x1-x0);const step=opt.step||1,lab=opt.label||step;let g=`<line x1="${x0-8}" y1="${y}" x2="${x1+8}" y2="${y}" style="stroke:var(--ink);stroke-width:3"/>`;
+    for(let v=min;v<=max+1e-9;v=+(v+step).toFixed(6)){const big=Math.abs(Math.round((v-min)/lab)-(v-min)/lab)<1e-6;g+=`<line x1="${X(v)}" y1="${y-(big?9:5)}" x2="${X(v)}" y2="${y+(big?9:5)}" style="stroke:var(--ink);stroke-width:2"/>`;if(big)g+=T(X(v),y+28,fmt(v))}
+    (opt.jumps||[]).forEach(([a,b,t])=>{const xa=X(a),xb=X(b),xm=(xa+xb)/2;g+=`<path d="M${xa} ${y-4} Q${xm} ${y-38} ${xb} ${y-4}" style="fill:none;stroke:var(--sky);stroke-width:3"/>`;if(t)g+=`<text x="${xm}" y="${y-26}" text-anchor="middle" style="fill:var(--sky-d);font:900 13px var(--f-body)">${t}</text>`});
+    (opt.marks||[]).forEach(m=>{g+=`<circle cx="${X(m.v)}" cy="${y}" r="7" style="fill:${m.c||'var(--red)'};stroke:var(--surface);stroke-width:2"/>`;if(m.l)g+=`<text x="${X(m.v)}" y="${y-14}" text-anchor="middle" style="fill:${m.c||'var(--red)'};font:900 15px var(--f-body)">${m.l}</text>`});
+    return sv(W,y+40,g,'Tallinje')},
+  dec100(k,color='var(--sky)'){const s=20;let g='';for(let c=0;c<10;c++)for(let r=0;r<10;r++){const i=c*10+r;g+=`<rect x="${2+c*s}" y="${2+r*s}" width="${s}" height="${s}" style="fill:${i<k?color:'var(--surface)'};stroke:var(--muted);stroke-width:1"/>`}return sv(10*s+4,10*s+4,g,`${k} av 100 ruter`)},
+  clock(h,m){const cx=80,cy=80,r=70;let g=`<circle cx="${cx}" cy="${cy}" r="${r}" style="fill:var(--surface);stroke:var(--ink);stroke-width:5"/>`;
+    for(let i=1;i<=12;i++){const a=i*Math.PI/6-Math.PI/2;g+=T((cx+52*Math.cos(a)).toFixed(1),(cy+52*Math.sin(a)+5).toFixed(1),i)}
+    for(let i=0;i<60;i++){const a=i*Math.PI/30;const r1=i%5?64:60;g+=`<line x1="${(cx+r1*Math.cos(a)).toFixed(1)}" y1="${(cy+r1*Math.sin(a)).toFixed(1)}" x2="${(cx+67*Math.cos(a)).toFixed(1)}" y2="${(cy+67*Math.sin(a)).toFixed(1)}" style="stroke:var(--muted);stroke-width:${i%5?1:2.5}"/>`}
+    const ah=((h%12)+m/60)*Math.PI/6-Math.PI/2,am=m*Math.PI/30-Math.PI/2;
+    g+=`<line x1="${cx}" y1="${cy}" x2="${(cx+34*Math.cos(ah)).toFixed(1)}" y2="${(cy+34*Math.sin(ah)).toFixed(1)}" style="stroke:var(--ink);stroke-width:7;stroke-linecap:round"/><line x1="${cx}" y1="${cy}" x2="${(cx+56*Math.cos(am)).toFixed(1)}" y2="${(cy+56*Math.sin(am)).toFixed(1)}" style="stroke:var(--sky);stroke-width:4;stroke-linecap:round"/><circle cx="${cx}" cy="${cy}" r="5" style="fill:var(--ink)"/>`;
+    return sv(160,160,g,'Klokke')},
+  barChart(data,title=''){const W=320,H=200,b=30,l=34,maxV=Math.max(...data.map(d=>d.v)),top=Math.ceil(maxV/2)*2||2,bw=(W-l-10)/data.length;let g='';
+    for(let v=0;v<=top;v+=top>10?5:2){const y=H-b-(v/top)*(H-b-16);g+=`<line x1="${l}" y1="${y}" x2="${W-6}" y2="${y}" style="stroke:var(--line);stroke-width:1"/><text x="${l-6}" y="${y+4}" text-anchor="end" style="fill:var(--muted);font:700 11px var(--f-body)">${v}</text>`}
+    data.forEach((d,i)=>{const h=(d.v/top)*(H-b-16),x=l+i*bw+bw*.18;g+=`<rect x="${x}" y="${H-b-h}" width="${bw*.64}" height="${h}" rx="3" style="fill:var(--sky);stroke:var(--sky-d);stroke-width:1.5"/>`+T(x+bw*.32,H-10,d.l,'font-size="12"')});
+    g+=`<line x1="${l}" y1="${H-b}" x2="${W-6}" y2="${H-b}" style="stroke:var(--ink);stroke-width:2"/>`;return sv(W,H,g,title)},
+  coord(pts,n=8,line=null){const c=30,o=30,H=o+n*c+10;let g='';for(let i=0;i<=n;i++){g+=`<line x1="${o+i*c}" y1="${H-o}" x2="${o+i*c}" y2="${H-o-n*c}" style="stroke:var(--line);stroke-width:1"/><line x1="${o}" y1="${H-o-i*c}" x2="${o+n*c}" y2="${H-o-i*c}" style="stroke:var(--line);stroke-width:1"/>`;g+=`<text x="${o+i*c}" y="${H-o+18}" text-anchor="middle" style="fill:var(--muted);font:700 12px var(--f-body)">${i}</text>`;if(i)g+=`<text x="${o-10}" y="${H-o-i*c+4}" text-anchor="end" style="fill:var(--muted);font:700 12px var(--f-body)">${i}</text>`}
+    g+=`<line x1="${o}" y1="${H-o}" x2="${o+n*c+8}" y2="${H-o}" style="stroke:var(--ink);stroke-width:2.5"/><line x1="${o}" y1="${H-o}" x2="${o}" y2="${H-o-n*c-8}" style="stroke:var(--ink);stroke-width:2.5"/><text x="${o+n*c+4}" y="${H-o-8}" style="fill:var(--ink);font:900 13px var(--f-body)">x</text><text x="${o+8}" y="${H-o-n*c-2}" style="fill:var(--ink);font:900 13px var(--f-body)">y</text>`;
+    if(line!=null)g+=`<line x1="${o+line*c}" y1="${H-o+4}" x2="${o+line*c}" y2="${H-o-n*c-4}" style="stroke:var(--sky);stroke-width:3;stroke-dasharray:6 4"/>`;
+    pts.forEach(p=>{g+=`<rect x="${o+p.x*c-8}" y="${H-o-p.y*c-8}" width="16" height="16" rx="3" style="fill:${p.c||'var(--red)'};stroke:var(--surface);stroke-width:2"/>`;if(p.l)g+=`<text x="${o+p.x*c+12}" y="${H-o-p.y*c-10}" style="fill:${p.c||'var(--red)'};font:900 15px var(--f-body)">${p.l}</text>`});
+    return sv(o+n*c+24,H,g,'Koordinatsystem')},
+  angle(deg){const vx=130,vy=150,L=115,a=deg*Math.PI/180;const x2=vx+L*Math.cos(a),y2=vy-L*Math.sin(a),r=30;const ax=vx+r*Math.cos(a),ay=vy-r*Math.sin(a);
+    let g=`<line x1="${vx}" y1="${vy}" x2="${vx+L}" y2="${vy}" style="stroke:var(--ink);stroke-width:4;stroke-linecap:round"/><line x1="${vx}" y1="${vy}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" style="stroke:var(--ink);stroke-width:4;stroke-linecap:round"/>`;
+    g+=deg===90?`<rect x="${vx}" y="${vy-22}" width="22" height="22" style="fill:none;stroke:var(--red);stroke-width:3"/>`:`<path d="M${vx+r} ${vy} A${r} ${r} 0 ${deg>180?1:0} 0 ${ax.toFixed(1)} ${ay.toFixed(1)}" style="fill:none;stroke:var(--red);stroke-width:3"/>`;
+    return sv(260,170,g+`<circle cx="${vx}" cy="${vy}" r="5" style="fill:var(--ink)"/>`,'Vinkel')},
+  box(l,w,h){const a=12.5,b=7.2,s=14.5,p=8;const P=(x,y,z)=>[(p+w*a+(x-y)*a).toFixed(1),(p+h*s+(x+y)*b-z*s).toFixed(1)];const pg=(pts,f)=>`<polygon points="${pts.map(q=>q.join(',')).join(' ')}" style="fill:${f};stroke:var(--dirt-d);stroke-width:1"/>`;
+    const cubes=[];for(let i=0;i<l;i++)for(let j=0;j<w;j++)for(let k=0;k<h;k++)cubes.push([i,j,k]);cubes.sort((A,B)=>(A[0]+A[1]+A[2])-(B[0]+B[1]+B[2]));let g='';
+    cubes.forEach(([i,j,k])=>{const top=k===h-1;g+=pg([P(i,j,k+1),P(i+1,j,k+1),P(i+1,j+1,k+1),P(i,j+1,k+1)],top?'var(--grass-l)':'var(--dirt)')+pg([P(i+1,j,k),P(i+1,j+1,k),P(i+1,j+1,k+1),P(i+1,j,k+1)],'var(--dirt-d)')+pg([P(i,j+1,k),P(i+1,j+1,k),P(i+1,j+1,k+1),P(i,j+1,k+1)],'var(--dirt)');
+      if(top)g+=pg([P(i+1,j,k+1-.25),P(i+1,j+1,k+1-.25),P(i+1,j+1,k+1),P(i+1,j,k+1)],'var(--grass)')+pg([P(i,j+1,k+1-.25),P(i+1,j+1,k+1-.25),P(i+1,j+1,k+1),P(i,j+1,k+1)],'var(--grass-d)')});
+    return sv(Math.ceil(2*p+(l+w)*a),Math.ceil(2*p+(l+w)*b+h*s),g,`Boks ${l} ganger ${w} ganger ${h} blokker`)},
+  thermo(t){const X=60,top=14,bot=226,Y=v=>bot-(v+20)/40*(bot-top);let g=`<rect x="${X-9}" y="${top-6}" width="18" height="${bot-top+12}" rx="9" style="fill:var(--surface);stroke:var(--ink);stroke-width:2.5"/>`;
+    g+=`<rect x="${X-5}" y="${Y(t)}" width="10" height="${bot+4-Y(t)}" style="fill:var(--red)"/><circle cx="${X}" cy="${bot+14}" r="15" style="fill:var(--red);stroke:var(--ink);stroke-width:2.5"/>`;
+    for(let v=-20;v<=20;v+=5){g+=`<line x1="${X+10}" y1="${Y(v)}" x2="${X+20}" y2="${Y(v)}" style="stroke:var(--ink);stroke-width:2"/><text x="${X+26}" y="${Y(v)+5}" style="fill:var(--ink);font:800 13px var(--f-body)">${v===0?'0':fmt(v)}</text>`}
+    for(let v=-20;v<=20;v++)if(v%5)g+=`<line x1="${X+10}" y1="${Y(v)}" x2="${X+15}" y2="${Y(v)}" style="stroke:var(--muted);stroke-width:1"/>`;return sv(130,260,g,'Termometer')},
+  ruler(len){const u=25,x0=14;let g=`<rect x="${x0}" y="14" width="${len*u}" height="22" rx="6" style="fill:var(--red)"/><rect x="${x0+len*u-14}" y="14" width="14" height="22" rx="4" style="fill:var(--ink)"/><circle cx="${x0+len*u-40}" cy="38" r="0"/>`;
+    g+=`<rect x="4" y="46" width="${12*u+20}" height="46" rx="4" style="fill:var(--gold);stroke:var(--gold-d);stroke-width:2"/>`;
+    for(let i=0;i<=120;i++){const x=x0+i*u/10,big=i%10===0,mid=i%5===0;g+=`<line x1="${x}" y1="46" x2="${x}" y2="${46+(big?18:mid?12:7)}" style="stroke:#2A1E00;stroke-width:${big?2:1}"/>`;if(big)g+=`<text x="${x}" y="84" text-anchor="middle" style="fill:#2A1E00;font:800 12px var(--f-body)">${i/10}</text>`}
+    return sv(12*u+28,100,g,'Linjal')},
+  shape(n){let g='';const cx=70,cy=70,r=56;if(n==='sirkel')g=`<circle cx="${cx}" cy="${cy}" r="${r}"`;else if(n==='rektangel')g=`<rect x="10" y="35" width="120" height="70"`;else if(n==='kvadrat')g=`<rect x="20" y="20" width="100" height="100"`;
+    else{const k=n;let pts=[];for(let i=0;i<k;i++){const a=-Math.PI/2+2*Math.PI*i/k;pts.push((cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1))}g=`<polygon points="${pts.join(' ')}"`}
+    return sv(140,140,g+` style="fill:var(--sky);stroke:var(--sky-d);stroke-width:4"/>`,'Figur')},
+  column(a,b,op){const A=String(a),B=String(b),L=Math.max(A.length,B.length)+1;const cells=s=>{s=s.padStart(L,' ');return [...s].map(c=>`<td>${c===' '?'':c}</td>`).join('')};
+    return `<table class="coltab" aria-label="Oppstilling"><tr><td></td>${cells(A)}</tr><tr><td>${op}</td>${cells(B)}</tr><tr class="sum"><td></td>${cells('?'.padStart(1))}</tr></table>`},
+  emojiRow(e,n,per=10){let s='';for(let i=0;i<n;i++){s+=e;if((i+1)%per===0&&i<n-1)s+='<br>'}return `<div style="font-size:28px;line-height:1.3;text-align:center">${s}</div>`},
+  balance(left,right){return `<div style="display:flex;align-items:flex-end;gap:10px;justify-content:center;font-weight:900;font-size:26px"><div class="card" style="padding:10px 16px">${left}</div><div style="font-size:30px">=</div><div class="card" style="padding:10px 16px">${right}</div></div>`},
+  coins(list){return `<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">${list.map(v=>v>=50?`<span style="display:inline-grid;place-items:center;width:78px;height:42px;border-radius:6px;background:${v===50?'#C9A86A':v===100?'#D98C6A':'#7FA6D6'};color:#1d1d1d;font-weight:900;border:2px solid rgba(0,0,0,.25)">${v} kr</span>`:`<span style="display:inline-grid;place-items:center;width:${34+v}px;height:${34+v}px;border-radius:50%;background:${v===1||v===5?'#C7CBD1':'#E3B341'};color:#1d1d1d;font-weight:900;border:2px solid rgba(0,0,0,.25)">${v}</span>`).join('')}</div>`},
+  tri(g,h,u='cm'){const s=Math.min(22,240/g,150/h),W=g*s,Ht=h*s,x0=30,y0=Ht+20,ap=x0+W*.35;
+    return sv(W+70,Ht+50,`<polygon points="${x0},${y0} ${x0+W},${y0} ${ap},${y0-Ht}" style="fill:var(--gold);stroke:var(--gold-d);stroke-width:3"/><line x1="${ap}" y1="${y0}" x2="${ap}" y2="${y0-Ht}" style="stroke:var(--ink);stroke-width:2;stroke-dasharray:5 4"/><rect x="${ap}" y="${y0-10}" width="10" height="10" style="fill:none;stroke:var(--ink);stroke-width:1.5"/>`+T(x0+W/2,y0+20,`g = ${g} ${u}`)+`<text x="${ap+8}" y="${y0-Ht/2}" style="fill:var(--ink);font:800 14px var(--f-body)">h = ${h} ${u}</text>`,'Trekant')},
+  para(g,h,u='cm'){const s=Math.min(22,220/g,150/h),W=g*s,Ht=h*s,x0=20,y0=Ht+20,sh=Math.min(50,W*.3);
+    return sv(W+sh+60,Ht+50,`<polygon points="${x0},${y0} ${x0+W},${y0} ${x0+W+sh},${y0-Ht} ${x0+sh},${y0-Ht}" style="fill:var(--sky);stroke:var(--sky-d);stroke-width:3"/><line x1="${x0+sh}" y1="${y0}" x2="${x0+sh}" y2="${y0-Ht}" style="stroke:var(--ink);stroke-width:2;stroke-dasharray:5 4"/>`+T(x0+W/2,y0+20,`g = ${g} ${u}`)+`<text x="${x0+sh+6}" y="${y0-Ht/2}" style="fill:var(--ink);font:800 14px var(--f-body)">h = ${h} ${u}</text>`,'Parallellogram')}
+};
+const SKINS={gress:{n:'Gress',p:0,b:'var(--grass)',t:'var(--grass-l)'},tre:{n:'Treplank',p:40,b:'#A0703A',t:'#C99A5E'},is:{n:'Is',p:80,b:'#74A9DA',t:'#DCEBFA'},natt:{n:'Natt',p:100,b:'#5B4B8A',t:'#9C8BD6'},gull:{n:'Gull',p:150,b:'#D9A300',t:'#FFD95A'},lava:{n:'Lava',p:180,b:'#D9480F',t:'#FFA94D'},diamant:{n:'Diamant',p:250,b:'#24A8B2',t:'#9BE7EA'}};
+const HATS={ingen:{n:'Antenne',p:0,s:'<line x1="24" y1="10" x2="24" y2="3" stroke="#6A421C" stroke-width="2.5"/><circle cx="24" cy="3" r="2.8" fill="#F2B705"/>'},
+ caps:{n:'Caps',p:60,s:'<path d="M8 11 Q24 -5 40 11 Z" fill="#E5484D"/><rect x="30" y="8.5" width="16" height="3.5" rx="1.7" fill="#B5333A"/>'},
+ kokk:{n:'Kokkelue',p:90,s:'<rect x="14" y="5" width="20" height="6" fill="#fff" stroke="#bbb"/><circle cx="17" cy="3" r="5" fill="#fff"/><circle cx="24" cy="1" r="6" fill="#fff"/><circle cx="31" cy="3" r="5" fill="#fff"/>'},
+ hjelm:{n:'Racinghjelm',p:120,s:'<path d="M4 14 Q24 -10 44 14 Z" fill="#3E9FDB"/><rect x="9" y="6" width="30" height="3.5" fill="#fff" opacity=".85"/>'},
+ krone:{n:'Krone',p:200,s:'<path d="M11 10 L13 0 L18.5 5 L24 -2 L29.5 5 L35 0 L37 10 Z" fill="#F2B705" stroke="#C48F00" stroke-width="1.5"/><circle cx="24" cy="6" r="1.8" fill="#E5484D"/>'}};
+const KUBO=(size=44,mood='happy',skin=(typeof S!=='undefined'&&S.skin)||'gress',hat=(typeof S!=='undefined'&&S.hat)||'ingen')=>{const k=SKINS[skin]||SKINS.gress,h=HATS[hat]||HATS.ingen;return `<svg width="${size}" height="${size}" viewBox="0 -3 48 51" aria-hidden="true" style="flex:none"><rect x="5" y="9" width="38" height="36" rx="7" style="fill:${k.b}"/><rect x="5" y="9" width="38" height="11" rx="6" style="fill:${k.t}"/>${h.s}<rect x="13" y="23" width="7" height="8" rx="2" style="fill:var(--eye)"/><rect x="28" y="23" width="7" height="8" rx="2" style="fill:var(--eye)"/><rect x="15" y="24" width="2.5" height="2.5" style="fill:#fff"/><rect x="30" y="24" width="2.5" height="2.5" style="fill:#fff"/>${mood==='sad'?'<path d="M17 40 q7 -6 14 0" style="fill:none;stroke:var(--eye);stroke-width:3;stroke-linecap:round"/>':'<path d="M16 35 q8 7 16 0" style="fill:none;stroke:var(--eye);stroke-width:3;stroke-linecap:round"/>'}</svg>`};
+
+/* ============ curriculum ============ */
+const COURSES=[
+ {id:'t2',label:'1.–2. trinn',sub:'Tall, pluss og minus, klokka og former'},
+ {id:'t3',label:'3. trinn',sub:'Gangetabellen, deling og store tall'},
+ {id:'t4',label:'4. trinn',sub:'Brøk, desimaltall, areal og tid'},
+ {id:'t5',label:'5. trinn',sub:'Desimaltall, prosent og negative tall'},
+ {id:'t6',label:'6. trinn',sub:'Brøkregning, vinkler, volum og statistikk'}
+];
+const U=[];const unit=(o)=>U.push(o);
+const tr=(t)=>`<div class="trick">💡 ${t}</div>`;
+
+/* ---------- 1.–2. trinn ---------- */
+unit({id:'t2-tall',c:'t2',icon:'🧱',title:'Tall opp til 100',
+ cards:[
+  {h:'Tiere og enere',t:`<p>Tenk deg at du har masse løse blokker. Hver gang du får <b>10 løse blokker</b>, limer du dem sammen til én stang. En stang er en <b>tier</b>.</p><p>Tallet <b>34</b> betyr: 3 stenger (30) og 4 løse blokker (4).</p>`,v:V.tensOnes(34)},
+  {h:'Plassen bestemmer verdien',t:`<p>I tallet 34 står 3-tallet på <b>tierplassen</b>, så det er verdt 30. 4-tallet står på <b>enerplassen</b> og er verdt 4.</p><p>Bytter du om til 43, blir det et helt annet tall. Akkurat som at bil nr. 34 og bil nr. 43 ikke er den samme bilen.</p>${tr('Tierplassen er til venstre, enerplassen helt til høyre.')}`},
+  {h:'Hvem er størst?',t:`<p>Se på tierne først! 52 og 48: 5 tiere slår 4 tiere, så <b>52 er størst</b>, selv om 8 er større enn 2.</p><p>Bare når tierne er like, ser du på enerne.</p>`,v:V.numline(40,60,{step:1,label:5,marks:[{v:48,l:'48',c:'var(--sky)'},{v:52,l:'52'}]})}
+ ],
+ gen(l){const T=[
+  ()=>{const n=rnd(l===1?11:21,l===1?49:99);return N('Hvor mange blokker er det til sammen?',n,{vis:V.tensOnes(n),hint:'Tell stengene først. Hver stang er 10.',why:`${Math.floor(n/10)} stenger er ${Math.floor(n/10)*10}, pluss ${n%10} løse blokker = ${n}.`})},
+  ()=>{const n=rnd(12,98);return N(`Hvor mange <b>tiere</b> er det i tallet ${n}?`,Math.floor(n/10),{hint:'Tierne står til venstre.',why:`${n} = ${Math.floor(n/10)} tiere og ${n%10} enere.`})},
+  ()=>{let a=rnd(10,99),b=rnd(10,99);while(a===b)b=rnd(10,99);return C(`Hvilket tall er størst: ${a} eller ${b}?`,Math.max(a,b),[Math.min(a,b)],{hint:'Sammenlign tierne først.',why:`${Math.max(a,b)} har ${Math.floor(Math.max(a,b)/10)>Math.floor(Math.min(a,b)/10)?'flere tiere':'like mange tiere, men flere enere'}.`})},
+  ()=>{const n=rnd(2,9)*10-1;return N(`Hvilket tall kommer rett etter ${n}?`,n+1,{hint:'Når enerne er 9 og du legger til 1, blir det en ny tier.',why:`${n} + 1 = ${n+1}. Ti enere blir til en ny tier.`})},
+  ()=>{const t=rnd(2,9),o=rnd(0,9);return N(`${t} tiere og ${o} enere. Hvilket tall er det?`,t*10+o,{why:`${t} tiere = ${t*10}. ${t*10} + ${o} = ${t*10+o}.`})}
+ ];return pick(l===1?T.slice(0,2):l===2?T.slice(0,4):T.slice(1))()}});
+
+unit({id:'t2-pluss20',c:'t2',icon:'➕',title:'Pluss og minus til 20',
+ cards:[
+  {h:'Tiervenner',t:`<p>Noen tall er bestevenner fordi de blir <b>10</b> sammen:</p><p style="font-size:22px;font-weight:900">1+9 · 2+8 · 3+7 · 4+6 · 5+5</p><p>De hører sammen som bil og ratt. Lær dem utenat – de hjelper deg med nesten all pluss og minus.</p>`,v:V.bar(7,10,'var(--grass)')},
+  {h:'Fyll opp til 10 først',t:`<p><b>8 + 5</b>: 8 trenger 2 for å bli 10. Ta 2 av femmeren, så har du 3 igjen.</p><p>8 + 2 = 10, og 10 + 3 = <b>13</b>.</p>`,v:V.numline(5,15,{jumps:[[8,10,'+2'],[10,13,'+3']],marks:[{v:13,l:'13'}]})},
+  {h:'Minus er å gå bakover',t:`<p>Du har 12 kjeks og spiser 4. <b>12 − 4</b>: Gå først ned til 10 (spis 2), så 2 til. Da er du på <b>8</b>.</p>${tr('Minus? Gå ned til 10 først, så resten.')}`,v:V.numline(5,15,{jumps:[[12,10,'−2'],[10,8,'−2']],marks:[{v:8,l:'8'}]})}
+ ],
+ gen(l){if(l===1){if(Math.random()<.5){const a=rnd(1,9);return N(`${a} + ? = 10`,10-a,{hint:'Hvem er tiervennen til '+a+'?',why:`${a} og ${10-a} er tiervenner: ${a} + ${10-a} = 10.`})}const a=rnd(1,9),b=rnd(1,10-a);return N(`${a} + ${b} = ?`,a+b,{vis:V.emojiRow('🍪',a)+'<div class="center" style="font-weight:900">+</div>'+V.emojiRow('🍪',b),why:`Tell videre fra ${a}: ${a+b}.`})}
+  if(l===2){const a=rnd(6,9),b=rnd(11-a,9);return N(`${a} + ${b} = ?`,a+b,{hint:`Fyll opp til 10 først: ${a} + ${10-a} = 10.`,why:`${a} + ${10-a} = 10, og så ${b-(10-a)} til: ${a+b}.`})}
+  const s=rnd(11,18),b=rnd(s-9,9);if(Math.random()<.5)return N(`${s} − ${b} = ?`,s-b,{hint:`Gå ned til 10 først (ta bort ${s-10}).`,why:`${s} − ${s-10} = 10, og 10 − ${b-(s-10)} = ${s-b}.`});return N(`? + ${b} = ${s}`,s-b,{hint:'Hva må du starte på for å havne på '+s+'?',why:`${s} − ${b} = ${s-b}. Sjekk: ${s-b} + ${b} = ${s}.`})}});
+
+unit({id:'t2-pluss100',c:'t2',icon:'🚗',title:'Pluss og minus til 100',
+ cards:[
+  {h:'Hopp med tierne',t:`<p>En bil kjører 38 km og så 25 km til. <b>38 + 25</b>:</p><p>Hopp først med tierne: 38 + 20 = 58. Så enerne: 58 + 5 = <b>63</b>.</p>`,v:V.numline(30,70,{step:1,label:10,jumps:[[38,58,'+20'],[58,63,'+5']],marks:[{v:63,l:'63'}]})},
+  {h:'Minus-triks: ta litt for mye',t:`<p><b>72 − 28</b>: 28 er nesten 30. Ta bort 30: 72 − 30 = 42. Men du tok 2 for mye, så gi dem tilbake: 42 + 2 = <b>44</b>.</p>${tr('9, 19, 29 … er nesten tiere. Regn med tieren og juster etterpå.')}`},
+  {h:'Sjekk svaret',t:`<p>Pluss og minus er motsatte. Har du regnet 72 − 28 = 44, kan du sjekke: 44 + 28 = 72. Stemmer!</p>`}
+ ],
+ gen(l){const a=rnd(l===1?10:15,l===1?40:70),b=rnd(l===1?10:11,l===1?40:Math.min(29,99-a));
+  if(l===1)return N(`${a} + ${b} = ?`,a+b,{hint:'Legg sammen tierne først, så enerne.',why:`${a} + ${Math.floor(b/10)*10} = ${a+Math.floor(b/10)*10}, så + ${b%10} = ${a+b}.`});
+  if(l===2){const x=rnd(41,95),y=rnd(11,x-10);return N(`${x} − ${y} = ?`,x-y,{hint:'Ta bort tierne først, så enerne.',why:`${x} − ${Math.floor(y/10)*10} = ${x-Math.floor(y/10)*10}, så − ${y%10} = ${x-y}.`})}
+  const S=pick([()=>{const p=rnd(25,60),q=rnd(15,35);return N(`En Minecraft-kiste har ${p} jernbarrer. Du legger inn ${q} til. Hvor mange er det nå?`,p+q,{why:`${p} + ${q} = ${p+q}.`})},()=>{const p=rnd(50,99),q=rnd(12,45);return N(`Bilen har ${p} liter bensin og bruker ${q} liter. Hvor mye er igjen?`,p-q,{why:`${p} − ${q} = ${p-q}.`})},()=>{const p=rnd(30,80),q=rnd(11,29);return N(`Du har ${p} kr og kjøper en burger til ${q} kr. Hvor mye har du igjen?`,p-q,{why:`${p} − ${q} = ${p-q}.`})}]);return S()}});
+
+unit({id:'t2-monster',c:'t2',icon:'🔁',title:'Tallmønstre',
+ cards:[
+  {h:'Finn regelen',t:`<p>Et mønster er en regel som gjentas, som en turner som gjør samme serie igjen og igjen.</p><p style="font-size:22px;font-weight:900">2, 4, 6, 8, …</p><p>Hva skjer fra tall til tall? <b>+2</b> hver gang. Neste tall blir 10.</p>`,v:V.numline(0,12,{jumps:[[2,4,'+2'],[4,6,'+2'],[6,8,'+2'],[8,10,'+2']]})},
+  {h:'Partall og oddetall',t:`<p><b>Partall</b> kan deles i to like store hauger: 2, 4, 6, 8, 10 … De ender på 0, 2, 4, 6 eller 8.</p><p><b>Oddetall</b> får én til overs: 1, 3, 5, 7, 9 …</p>${tr('Se bare på det siste sifferet! 358 er partall fordi det ender på 8.')}`}
+ ],
+ gen(l){if(Math.random()<.3){const n=rnd(10,l===3?999:99);return C(`Er ${n} et partall eller et oddetall?`,n%2?'Oddetall':'Partall',['Partall','Oddetall'],{why:`${n} ender på ${n%10}, og det er ${n%2?'et oddetall':'et partall'}.`})}
+  const st=l===1?pick([2,5,10]):l===2?pick([3,4,5,10,-2,-5]):pick([3,4,6,7,9,25,-3,-10]);const s0=st<0?rnd(40,90):rnd(0,20);const seq=[0,1,2,3].map(i=>s0+i*st);
+  return N(`Hva er neste tall? <br><span style="font-size:28px">${seq.join(', ')}, …</span>`,s0+4*st,{hint:'Hvor mye endrer tallet seg hver gang?',why:`Regelen er ${st>0?'+':'−'}${Math.abs(st)}. ${seq[3]} ${st>0?'+':'−'} ${Math.abs(st)} = ${s0+4*st}.`})}});
+
+unit({id:'t2-klokka',c:'t2',icon:'⏰',title:'Klokka: hel, halv og kvart',
+ cards:[
+  {h:'To visere',t:`<p>Den <b>korte</b> viseren viser timene. Den <b>lange</b> viseren viser minuttene.</p><p>Når den lange peker rett opp på 12, er klokka <b>hel</b>. Her er klokka 3.</p>`,v:V.clock(3,0)},
+  {h:'«Halv» betyr halvveis TIL',t:`<p>På norsk sier vi «halv fire» når klokka er <b>3:30</b>. Det betyr: halvveis til fire.</p><p>Den lange viseren peker ned på 6, og den korte står midt mellom 3 og 4.</p>${tr('Halv fire = 3:30. Tenk: «halvveis til fire».')}`,v:V.clock(3,30)},
+  {h:'Kvart over og kvart på',t:`<p><b>Kvart over</b> = 15 minutter over. Kvart over 3 = 3:15.</p><p><b>Kvart på</b> = 15 minutter før. Kvart på 4 = 3:45.</p><p>En kvart er en fjerdedel av en time, som en fjerdedel av en pizza.</p>`,v:V.clock(3,15)}
+ ],
+ gen(l){const h=rnd(1,12),m=l===1?0:l===2?pick([0,30]):pick([15,30,45]);const nm=['','ett','to','tre','fire','fem','seks','sju','åtte','ni','ti','elleve','tolv'];const nx=h%12+1;
+  const name=(h,m)=>m===0?`${nm[h]}`:m===30?`halv ${nm[h%12+1]}`:m===15?`kvart over ${nm[h]}`:`kvart på ${nm[h%12+1]}`;
+  const wr=[name(h%12+1,m),name(h,(m+30)%60),name(nx%12+1,m),m===30?nm[h]:name(h,m===15?45:15)];
+  return C('Hva er klokka?','Klokka '+name(h,m),wr.map(w=>'Klokka '+w),{vis:V.clock(h,m),hint:'Se på den korte viseren for timen, den lange for minuttene.',why:`Den korte viseren er ved ${h}${m?'–'+nx:''}, og den lange peker på ${m===0?'12':m/5}. Det er ${h}:${String(m).padStart(2,'0')}, altså «${name(h,m)}».`})}});
+
+unit({id:'t2-former',c:'t2',icon:'🔺',title:'Former og figurer',
+ cards:[
+  {h:'Hjørner og sider',t:`<p>En <b>trekant</b> har 3 sider og 3 hjørner. En <b>firkant</b> har 4. En <b>femkant</b> har 5, og en <b>sekskant</b> 6 (som i en bikube).</p><p>En <b>sirkel</b> har ingen hjørner – den er helt rund, som et bilhjul.</p>`,v:V.shape(6)},
+  {h:'Kvadrat eller rektangel?',t:`<p>Begge er firkanter med rette hjørner. Et <b>kvadrat</b> har fire <b>like lange</b> sider, som siden på en Minecraft-blokk. Et <b>rektangel</b> har to lange og to korte sider, som en dør.</p>`,v:V.shape('rektangel')},
+  {h:'3D-figurer',t:`<p>En <b>kube</b> er en terning – akkurat som en Minecraft-blokk: 6 flater, 8 hjørner. En <b>kule</b> er en ball. En <b>sylinder</b> er som en brusboks.</p>`,v:V.box(1,1,1)}
+ ],
+ gen(l){const P=[[3,'trekant'],[4,'firkant'],[5,'femkant'],[6,'sekskant'],[8,'åttekant']];
+  if(l===1){const [n,nm]=pick(P.slice(0,4));return C('Hva heter denne figuren?',nm[0].toUpperCase()+nm.slice(1),P.map(p=>p[1][0].toUpperCase()+p[1].slice(1)),{vis:V.shape(n),hint:'Tell hjørnene.',why:`Den har ${n} hjørner, så den er en ${nm}.`})}
+  if(l===2){const [n,nm]=pick(P);return N(`Hvor mange hjørner har en ${nm}?`,n,{why:`«${nm[0].toUpperCase()+nm.slice(1,-4)}» sier det: ${n} hjørner.`})}
+  return pick([()=>N('Hvor mange flater har en kube (en Minecraft-blokk)?',6,{why:'Topp, bunn og 4 sider = 6 flater.'}),()=>N('Hvor mange hjørner har en kube?',8,{why:'4 hjørner oppe og 4 nede = 8.'}),()=>C('Hvilken figur har 4 like lange sider og rette hjørner?','Kvadrat',['Rektangel','Trekant','Sekskant'],{why:'Et kvadrat har fire like lange sider.'}),()=>C('Hvilken 3D-figur ligner en brusboks?','Sylinder',['Kule','Kube','Kjegle'],{why:'En brusboks er rund med flat topp og bunn: en sylinder.'})])()}});
+
+unit({id:'t2-lengde',c:'t2',icon:'📏',title:'Måle lengde',
+ cards:[
+  {h:'Centimeter',t:`<p>Én <b>centimeter (cm)</b> er omtrent like bred som neglen på lillefingeren din. En Lego-kloss er ca. 3 cm.</p><p>Legg linjalen med <b>0</b> ved starten av tingen du måler!</p>`,v:V.ruler(7)},
+  {h:'Meter',t:`<p>1 <b>meter</b> = 100 cm. En vanlig bil er ca. 4 meter lang. En voksen er nesten 2 meter høy.</p>${tr('Kort ting? cm. Lang ting? m.')}`}
+ ],
+ gen(l){if(l===1){const n=rnd(2,11);return N('Hvor lang er blyanten i cm?',n,{vis:V.ruler(n),hint:'Les av tallet der blyanten slutter.',why:`Blyanten starter på 0 og slutter på ${n}.`})}
+  if(l===2){const m=rnd(1,9);return N(`${m} m = ? cm`,m*100,{hint:'1 m = 100 cm.',why:`${m} · 100 = ${m*100} cm.`})}
+  return pick([()=>C('Hvor lang er en vanlig bil?','Ca. 4 m',['Ca. 4 cm','Ca. 40 m','Ca. 400 m'],{why:'En bil er omtrent 4 meter.'}),()=>C('Hvor lang er en blyant?','Ca. 15 cm',['Ca. 15 m','Ca. 1 cm','Ca. 150 cm'],{why:'En blyant er ca. 15 cm.'}),()=>{const c=rnd(2,9)*100;return N(`${c} cm = ? m`,c/100,{why:`100 cm = 1 m, så ${c} cm = ${c/100} m.`})}])()}});
+
+/* ---------- 3. trinn ---------- */
+unit({id:'t3-tall1000',c:'t3',icon:'🏰',title:'Tall opp til 1000',
+ cards:[
+  {h:'Hundrere',t:`<p>10 stenger limt sammen blir en <b>plate</b> = 100 blokker.</p><p>Tallet <b>347</b> er 3 plater, 4 stenger og 7 løse blokker.</p>`,v:V.tensOnes(347)},
+  {h:'Del opp tallet',t:`<p>347 = <b>300 + 40 + 7</b>. Dette kalles <i>utvidet form</i>. Det hjelper når du skal regne i hodet.</p>${tr('Hundrere – tiere – enere. Fra venstre mot høyre.')}`}
+ ],
+ gen(l){const n=rnd(101,999),h=Math.floor(n/100),t=Math.floor(n/10)%10,o=n%10;
+  if(l===1)return N('Hvilket tall viser blokkene?',n,{vis:V.tensOnes(n),hint:'Plate = 100, stang = 10, liten blokk = 1.',why:`${h}·100 + ${t}·10 + ${o} = ${n}.`});
+  if(l===2)return pick([()=>N(`Hva er verdien av sifferet ${h} i ${n}?`,h*100,{why:`${h} står på hundrerplassen, så det er verdt ${h*100}.`}),()=>N(`${h*100} + ${t*10} + ${o} = ?`,n,{why:`Sett sammen: ${n}.`})])();
+  return pick([()=>N(`Hva er 100 mer enn ${n}?`,n+100,{why:'Bare hundrersifferet øker med 1.'}),()=>N(`Hva er 10 mindre enn ${n}?`,n-10,{why:'Tiersifferet går ned med 1.'}),()=>{let m=rnd(101,999);return C(`Hvilket tall er størst: ${n} eller ${m}?`,Math.max(n,m),[Math.min(n,m)],{why:'Sammenlign hundrerne først, så tierne, så enerne.'})}])()}});
+
+unit({id:'t3-oppstilling',c:'t3',icon:'🧮',title:'Oppstilling: mente og låning',
+ cards:[
+  {h:'Enere under enere',t:`<p>Når du stiller opp, må enerne stå under enerne og tierne under tierne. Så regner du fra <b>høyre</b> mot venstre.</p>`,v:V.column(256,137,'+')},
+  {h:'Mente: veksle 10 til én',t:`<p>6 + 7 = 13 enere. Det er for mange for én plass! Vi bytter 10 enere til 1 tier – akkurat som å smelte 10 jernbarrer til én jernblokk.</p><p>Skriv <b>3</b> nederst, og en liten <b>1</b> (menten) over tierne.</p><p>256 + 137 = <b>393</b>.</p>`},
+  {h:'Låning: bytt én til 10',t:`<p><b>52 − 18</b>: Du kan ikke ta 8 fra 2. Lån en tier: den blir til 10 enere. Nå har du 12 − 8 = 4, og 4 tiere − 1 tier = 3.</p><p>Svar: <b>34</b>.</p>${tr('Sjekk minus med pluss: 34 + 18 = 52 ✔')}`}
+ ],
+ gen(l){const add=l===3?Math.random()<.5:l===1;let a,b;
+  if(add){a=rnd(l===1?110:150,l===1?499:799);b=rnd(100,999-a)}else{a=rnd(300,999);b=rnd(101,a-50)}
+  return N('Regn ut:',add?a+b:a-b,{vis:V.column(a,b,add?'+':'−'),hint:add?'Start med enerne. Over 9? Skriv en mente.':'Start med enerne. For lite? Lån fra naboen.',why:`${a} ${add?'+':'−'} ${b} = ${add?a+b:a-b}. Sjekk: ${add?`${a+b} − ${b} = ${a}`:`${a-b} + ${b} = ${a}`}.`})}});
+
+function multQ(tables,l,showGrid){const a=pick(tables),b=rnd(1,10);const [x,y]=Math.random()<.5?[a,b]:[b,a];
+  if(l===3&&Math.random()<.5){return N(`? · ${y} = ${x*y}`,x,{fact:[x,y],hint:`Hvilket tall ganger ${y} blir ${x*y}?`,why:`${x} · ${y} = ${x*y}, så tallet som mangler er ${x}.`})}
+  return N(`${x} · ${y} = ?`,x*y,{fact:[x,y],vis:showGrid?V.grid(x,y):'',hint:tipFor(x,y),why:whyMult(x,y)})}
+function tipFor(x,y){const m=Math.max(x,y),n=Math.min(x,y);
+  if(n===1)return 'Én gang noe er bare seg selv.';if(n===10||m===10)return 'Ganger med 10? Heng på en null!';if(n===2||m===2)return 'Ganger med 2 = dobling.';
+  if(n===5||m===5)return 'Fem-gangen: halvparten av ti-gangen.';if(x===9||y===9)return 'Ni-gangen: ta ti-gangen og trekk fra én gruppe.';
+  if(x===4||y===4)return 'Fire-gangen: doble to ganger.';return 'Del opp: bruk et tall du kan, og legg til eller trekk fra én gruppe.'}
+function whyMult(x,y){const p=x*y,m=Math.max(x,y),n=Math.min(x,y);
+  if(n===1)return `${x} · ${y} = ${p}.`;if(m===10)return `${n} · 10 = ${n} med en null bak = ${p}.`;if(n===2)return `${m} · 2 = ${m} + ${m} = ${p}.`;
+  if(n===5)return `${m} · 10 = ${m*10}, og halvparten av det er ${p}.`;if(m===9)return `${n} · 10 = ${n*10}, minus én ${n}-er = ${p}.`;
+  if(n===4)return `${m} · 2 = ${m*2}, doble det: ${p}.`;if(n===3)return `${m} + ${m} + ${m} = ${p}.`;
+  if(n===8||m===8){const o=n===8?m:n;return `${o} · 4 = ${o*4}, doble det: ${p}.`}
+  if(n===6)return `${m} · 5 = ${m*5}, pluss én ${m}-er til = ${p}.`;return `${n} · ${m} = ${p}. ${p===56?'Husk: 5, 6, 7, 8 → 56 = 7 · 8!':''}`}
+unit({id:'t3-gange1',c:'t3',icon:'✖️',title:'Gangetabellen 1–5 og 10',
+ cards:[
+  {h:'Gange = like grupper',t:`<p>Du åpner <b>3 kister</b>, og i hver ligger det <b>4 diamanter</b>. Hvor mange diamanter har du?</p><p>4 + 4 + 4 = 12. Det kan vi skrive kortere: <b>3 · 4 = 12</b>.</p><p>Ganging er bare superrask pluss!</p>`,v:V.grid(3,4,{top:'var(--sky)',body:'var(--sky-d)'})},
+  {h:'Byttetrikset',t:`<p>Snu rutenettet på siden: 3 rader med 4 blir 4 rader med 3. Det er like mange blokker!</p><p>Så <b>3 · 4 = 4 · 3</b>. Kan du den ene, kan du den andre gratis. Det halverer gangetabellen.</p>`,v:V.grid(4,3)},
+  {h:'Superkrefter for 2, 5 og 10',t:`${tr('<b>10-gangen:</b> heng på en null. 7 · 10 = 70.')}${tr('<b>2-gangen:</b> doble. 2 · 8 = 8 + 8 = 16.')}${tr('<b>5-gangen:</b> halvparten av 10-gangen. 5 · 8 → 80 delt på 2 = 40. Svarene ender alltid på 0 eller 5.')}${tr('<b>4-gangen:</b> doble, og doble igjen. 4 · 7 → 14 → 28.')}`},
+  {h:'Tabellen som et kart',t:`<p>Under <b>Pokaler</b> finner du gangetabell-kartet ditt. Rutene blir grønne etter hvert som du kan dem. Målet er et helt grønt kart!</p>`}
+ ],
+ gen(l){return multQ([1,2,3,4,5,10],l,l===1)}});
+
+unit({id:'t3-gange2',c:'t3',icon:'🔥',title:'Gangetabellen 6–9',
+ cards:[
+  {h:'Du kan mer enn du tror',t:`<p>Med byttetrikset og 2-, 5- og 10-gangen kan du allerede det meste. Det er bare <b>10 «vanskelige»</b> igjen:</p><p style="font-weight:900">6·6 6·7 6·8 6·9 7·7 7·8 7·9 8·8 8·9 9·9</p><p>10 stykker. Det klarer du!</p>`},
+  {h:'9-gangen: fingertrikset',t:`<p>Hold opp 10 fingre. For <b>9 · 4</b>: bøy ned finger nummer 4. Fingre til venstre = 3 (tiere), til høyre = 6 (enere). <b>36</b>!</p>${tr('I 9-gangen blir sifrene alltid 9 til sammen: 36 → 3+6 = 9. Og tieren er én mindre enn tallet du ganger med.')}`},
+  {h:'6-gangen: 5-gangen + én til',t:`<p><b>6 · 7</b> = 5 · 7 + 7 = 35 + 7 = <b>42</b>.</p><p>Tenk: 5 biler med 7 hestekrefter … pluss én bil til.</p>`,v:V.grid(6,7)},
+  {h:'8-gangen: doble tre ganger',t:`<p><b>8 · 6</b>: 6 → 12 → 24 → <b>48</b>. Doble, doble, doble!</p>${tr('7 · 8 = 56. Husk rekka 5, 6, 7, 8: «56 = 7 · 8».')}`}
+ ],
+ gen(l){return multQ(l===1?[6,9]:[6,7,8,9],l,l===1)}});
+
+unit({id:'t3-deling',c:'t3',icon:'🍕',title:'Deling: rettferdig fordeling',
+ cards:[
+  {h:'Del likt',t:`<p>Du har <b>12 pizzabiter</b> og <b>3 venner</b>. Del ut én og én, rundt og rundt, til alt er borte. Alle får <b>4</b>.</p><p>Vi skriver <b>12 : 3 = 4</b>.</p>`,v:V.grid(3,4,{top:'var(--gold)',body:'var(--red)'})},
+  {h:'Deling er gange baklengs',t:`<p>For å regne <b>20 : 4</b> spør du: «Hva ganger 4 blir 20?» 5 · 4 = 20, så svaret er <b>5</b>.</p>${tr('Kan du gangetabellen, kan du deling. Det er samme tabell!')}`}
+ ],
+ gen(l){const b=rnd(2,l===1?5:10),q=rnd(1,10),a=b*q;
+  if(l===3&&Math.random()<.6)return pick([()=>N(`${a} kjeks deles likt på ${b} venner. Hvor mange får hver?`,q,{fact:[b,q],why:`${a} : ${b} = ${q}, fordi ${q} · ${b} = ${a}.`}),()=>N(`Et lag på ${b} turnere trenger ${a} matter til sammen. Hvor mange matter per turner?`,q,{fact:[b,q],why:`${a} : ${b} = ${q}.`})])();
+  return N(`${a} : ${b} = ?`,q,{fact:[b,q],vis:l===1?V.grid(b,q,{top:'var(--gold)',body:'var(--red)'}):'',hint:`Hva ganger ${b} blir ${a}?`,why:`${q} · ${b} = ${a}, så ${a} : ${b} = ${q}.`})}});
+
+unit({id:'t3-maling',c:'t3',icon:'⚖️',title:'Vekt og volum',
+ cards:[
+  {h:'Gram og kilogram',t:`<p>Et eple veier ca. <b>150 gram</b>. En liter melk veier ca. <b>1 kilogram</b>.</p><p><b>1 kg = 1000 g</b>. «Kilo» betyr tusen.</p>`},
+  {h:'Desiliter og liter',t:`<p>Et vanlig glass rommer ca. <b>2 dl</b>. En melkekartong rommer <b>1 liter</b>.</p><p><b>1 l = 10 dl</b>. Fem glass fyller nesten en kartong.</p>${tr('kilo = 1000. deci = en tiendedel.')}`}
+ ],
+ gen(l){if(l===1){const k=rnd(1,9);return Math.random()<.5?N(`${k} kg = ? g`,k*1000,{why:`1 kg = 1000 g, så ${k} kg = ${k*1000} g.`}):N(`${k} l = ? dl`,k*10,{why:`1 l = 10 dl, så ${k} l = ${k*10} dl.`})}
+  if(l===2)return pick([()=>C('Hva veier en sekk poteter?','5 kg',['5 g','500 kg','50 g'],{why:'En sekk poteter veier noen kilo.'}),()=>C('Hvor mye rommer et glass?','2 dl',['2 l','20 l','2 ml'],{why:'Et vanlig glass er ca. 2 dl.'}),()=>C('Hva veier en bil?','1200 kg',['1200 g','12 kg','120 g'],{why:'Biler veier over tusen kilo.'})])();
+  const g=rnd(2,8)*1000;return pick([()=>N(`${g} g = ? kg`,g/1000,{why:`1000 g = 1 kg.`}),()=>{const d=rnd(2,9)*10;return N(`${d} dl = ? l`,d/10,{why:'10 dl = 1 l.'})},()=>{const x=rnd(2,6);return N(`Oppskriften trenger ${x} dl melk per pannekakeporsjon. Hvor mange dl trenger du til 5 porsjoner?`,x*5,{why:`${x} · 5 = ${x*5} dl.`})}])()}});
+
+unit({id:'t3-diagram',c:'t3',icon:'📊',title:'Tabeller og søylediagram',
+ cards:[
+  {h:'Les et søylediagram',t:`<p>Klassen stemte på favorittmat. Jo høyere søyle, jo flere stemmer. Følg toppen av søylen bort til tallet på siden.</p>`,v:V.barChart([{l:'Pizza',v:8},{l:'Taco',v:6},{l:'Sushi',v:3},{l:'Burger',v:5}],'Favorittmat')},
+  {h:'Tellestreker',t:`<p>Når du teller, kan du lage streker: |||| og den femte på skrå over. Da er det lett å telle i femmere.</p>`}
+ ],
+ gen(l){const foods=shuffle(['Pizza','Taco','Sushi','Burger','Pasta','Vafler']).slice(0,4);const data=foods.map(f=>({l:f,v:rnd(1,10)}));const vis=V.barChart(data,'Diagram');
+  const mx=data.reduce((a,b)=>b.v>a.v?b:a);const tie=data.filter(d=>d.v===mx.v).length>1;
+  if(l===1||tie){const d=pick(data);return N(`Hvor mange stemte på ${d.l}?`,d.v,{vis,why:`Søylen for ${d.l} går opp til ${d.v}.`})}
+  if(l===2)return C('Hvilken mat fikk flest stemmer?',mx.l,foods,{vis,why:`${mx.l} har høyeste søyle med ${mx.v}.`});
+  const [a,b]=shuffle(data);return pick([()=>N(`Hvor mange flere stemte på ${a.v>=b.v?a.l:b.l} enn på ${a.v>=b.v?b.l:a.l}?`,Math.abs(a.v-b.v),{vis,why:`${Math.max(a.v,b.v)} − ${Math.min(a.v,b.v)} = ${Math.abs(a.v-b.v)}.`}),()=>N('Hvor mange stemte til sammen?',data.reduce((s,d)=>s+d.v,0),{vis,why:`${data.map(d=>d.v).join(' + ')} = ${data.reduce((s,d)=>s+d.v,0)}.`})])()}});
+
+/* ---------- 4. trinn ---------- */
+unit({id:'t4-store',c:'t4',icon:'🚀',title:'Store tall og avrunding',
+ cards:[
+  {h:'Tusener',t:`<p>10 hundrere blir <b>1000</b>. I tallet <b>4 527</b> står 4 på tusenplassen. Vi lager et lite mellomrom etter tusenet så det blir lettere å lese.</p>`},
+  {h:'Avrunding',t:`<p>Bilen kjører i 87 km/t. Omtrent hvor fort? Ligger 87 nærmest 80 eller 90? <b>90</b>!</p>${tr('Se på sifferet rett til høyre: 0–4 → ned. 5–9 → opp.')}`,v:V.numline(80,90,{marks:[{v:87,l:'87'}]})}
+ ],
+ gen(l){if(l===1){const x=rnd(12,98);return N(`Rund av ${x} til nærmeste tier.`,Math.round(x/10)*10,{vis:V.numline(Math.floor(x/10)*10,Math.floor(x/10)*10+10,{marks:[{v:x,l:String(x)}]}),hint:'Se på enersifferet.',why:`Enersifferet er ${x%10}, så vi runder ${x%10>=5?'opp':'ned'} til ${Math.round(x/10)*10}.`})}
+  if(l===2){const x=rnd(101,989);return N(`Rund av ${x} til nærmeste hundrer.`,Math.round(x/100)*100,{hint:'Se på tiersifferet.',why:`Tiersifferet er ${Math.floor(x/10)%10}, så vi runder ${Math.floor(x/10)%10>=5?'opp':'ned'} til ${Math.round(x/100)*100}.`})}
+  const x=rnd(1001,9899);return pick([()=>N(`Rund av ${x} til nærmeste tusen.`,Math.round(x/1000)*1000,{why:`Hundrersifferet er ${Math.floor(x/100)%10}, så det blir ${Math.round(x/1000)*1000}.`}),()=>N(`Hva er verdien av sifferet ${Math.floor(x/1000)} i ${x}?`,Math.floor(x/1000)*1000,{why:'Det står på tusenplassen.'})])()}});
+
+unit({id:'t4-gange',c:'t4',icon:'💎',title:'Gange med større tall',
+ cards:[
+  {h:'Del opp tallet',t:`<p><b>23 · 4</b>: Del 23 i 20 og 3.</p><p>20 · 4 = 80 og 3 · 4 = 12. Legg sammen: 80 + 12 = <b>92</b>.</p><p>Tenk: 4 kister med 23 smaragder: 4 kister med 20, pluss 4 kister med 3.</p>`,v:`<div style="display:flex;gap:4px;align-items:flex-end;justify-content:center;font-weight:900"><div style="width:160px;height:64px;background:var(--grass);color:#fff;display:grid;place-items:center;border-radius:6px">20 · 4 = 80</div><div style="width:44px;height:64px;background:var(--gold);color:#2A1E00;display:grid;place-items:center;border-radius:6px;font-size:13px">3·4=12</div></div>`},
+  {h:'Gange med 10 og 100',t:`<p>Gange med 10: heng på én null. 34 · 10 = 340.<br>Gange med 100: heng på to nuller. 34 · 100 = 3400.</p>${tr('30 · 4? Regn 3 · 4 = 12, og heng på nullen: 120.')}`}
+ ],
+ gen(l){if(l===1){const a=rnd(2,9),t=pick([10,20,30,40,50]);return N(`${a} · ${t} = ?`,a*t,{hint:`Regn ${a} · ${t/10}, og heng på en null.`,why:`${a} · ${t/10} = ${a*t/10}, med null bak: ${a*t}.`})}
+  if(l===2){const a=rnd(12,49),b=rnd(2,9),t=Math.floor(a/10)*10,o=a%10;return N(`${a} · ${b} = ?`,a*b,{hint:`Del opp: ${t} · ${b} og ${o} · ${b}.`,why:`${t} · ${b} = ${t*b}, ${o} · ${b} = ${o*b}. ${t*b} + ${o*b} = ${a*b}.`})}
+  return pick([()=>{const a=rnd(101,399),b=rnd(2,6);const h=Math.floor(a/100)*100,r=a%100;return N(`${a} · ${b} = ?`,a*b,{why:`${h} · ${b} = ${h*b}, ${r} · ${b} = ${r*b}. Til sammen ${a*b}.`})},()=>{const a=rnd(12,99);const m=pick([10,100]);return N(`${a} · ${m} = ?`,a*m,{why:`Heng på ${m===10?'én null':'to nuller'}: ${a*m}.`})}])()}});
+
+unit({id:'t4-rest',c:'t4',icon:'🥚',title:'Deling med rest',
+ cards:[
+  {h:'Når det ikke går opp',t:`<p>Du har <b>17 egg</b> og eggekartonger som tar <b>5</b>. Du fyller 3 kartonger (15 egg), og <b>2 egg</b> blir til overs.</p><p>17 : 5 = <b>3 rest 2</b>.</p>`,v:V.emojiRow('🥚',17,5)},
+  {h:'Sjekk med gange',t:`<p>3 kartonger · 5 egg = 15, pluss 2 i rest = 17 ✔.</p>${tr('Resten må alltid være mindre enn tallet du deler på.')}`}
+ ],
+ gen(l){const b=rnd(2,l===1?5:9),q=rnd(2,l===3?12:9),r=rnd(1,b-1),a=b*q+r;
+  return {q:l===3?`${a} biler skal parkeres i rader med ${b} i hver. Hvor mange fulle rader blir det, og hvor mange biler blir til overs?`:`${a} : ${b} = ? rest ?`,a:[q,r],kind:'pair',show:`${q} rest ${r}`,vis:l===1?V.emojiRow('🥚',a,b):'',hint:`Hvor mange ganger går ${b} opp i ${a}? Gangetabellen: ${b}·${q}=${b*q}.`,why:`${b} · ${q} = ${b*q}. ${a} − ${b*q} = ${r} til overs. Svar: ${q} rest ${r}.`}}});
+
+unit({id:'t4-brok',c:'t4',icon:'🍕',title:'Brøk: del av en hel',
+ cards:[
+  {h:'Teller og nevner',t:`<p>En pizza er skåret i <b>8 like biter</b>. Du spiser <b>3</b>. Du har spist ${frac(3,8)} av pizzaen.</p><p><b>Nevneren</b> (nederst) sier hvor mange like biter helheten er delt i. <b>Telleren</b> (øverst) sier hvor mange biter vi snakker om.</p>`,v:V.pie(3,8)},
+  {h:'Større nevner = mindre biter!',t:`<p>Vil du heller ha ${frac(1,4)} eller ${frac(1,8)} av en pizza? Deler vi i 8, blir bitene <b>mindre</b> enn om vi deler i 4.</p><p>Så ${frac(1,4)} er <b>større</b> enn ${frac(1,8)}. Det lurer mange!</p>`,v:V.bar(1,4,'var(--gold)')+V.bar(1,8,'var(--gold)')},
+  {h:'Brøkstreken er en deling',t:`<p>${frac(1,2)} betyr 1 delt på 2. Én pizza delt på to personer gir en halv pizza hver.</p>${tr('Når telleren og nevneren er like, har du en hel: 8/8 = 1.')}`}
+ ],
+ gen(l){if(l<3){const d=pick(l===1?[2,3,4,6,8]:[3,4,5,6,8,10,12]),n=rnd(1,d-1);return F(l===1?'Hvor stor del av pizzaen er markert?':'Hvor stor del av stangen er farget?',n,d,{vis:l===1?V.pie(n,d):V.bar(n,d),hint:'Tell alle bitene (nevner) og de fargede (teller).',why:`Det er ${d} like deler, og ${n} er farget: ${n}/${d}.`})}
+  return pick([()=>{const[a,b]=shuffle([2,3,4,5,6,8,10]).slice(0,2);return C(`Hvilken brøk er størst: 1/${a} eller 1/${b}?`,`1/${Math.min(a,b)}`,[`1/${Math.max(a,b)}`],{why:`Jo færre biter, jo større er hver bit. 1/${Math.min(a,b)} er størst.`})},()=>{const d=pick([4,6,8]);return N(`Hvor mange åttendedeler er en hel pizza?`.replace('åttendedeler',d===4?'fjerdedeler':d===6?'sjettedeler':'åttendedeler'),d,{why:`${d}/${d} = 1 hel.`})},()=>{const d=pick([3,4,5,6,8]),n=rnd(1,d-1);return F(`Du har spist ${n} av ${d} biter. Hvor stor del av pizzaen er <b>igjen</b>?`,d-n,d,{vis:V.pie(d-n,d),why:`${d} − ${n} = ${d-n} biter igjen: ${d-n}/${d}.`})}])()}});
+
+unit({id:'t4-desimal',c:'t4',icon:'🏎️',title:'Desimaltall: tideler',
+ cards:[
+  {h:'Kommaet',t:`<p>Kommaet skiller <b>hele</b> fra <b>deler</b>. En sprinter løper 100 meter på 9,8 sekunder: 9 hele sekunder og 8 tideler.</p>`},
+  {h:'Tideler',t:`<p>Del 1 i 10 like deler. Hver del er <b>0,1</b> (en tidel) = ${frac(1,10)}.</p><p>0,7 betyr 7 tideler = ${frac(7,10)}.</p>`,v:V.numline(0,1,{step:.1,label:.5,marks:[{v:.7,l:'0,7'}]})},
+  {h:'Penger er desimaltall',t:`<p>12,50 kr er 12 kroner og 50 øre. Halvparten av en krone er 0,50 kr = 0,5 kr.</p>${tr('0,5 er det samme som en halv.')}`}
+ ],
+ gen(l){if(l===1){const k=rnd(1,9);return N('Hvilket tall viser den røde prikken?',k/10,{vis:V.numline(0,1,{step:.1,label:.5,marks:[{v:k/10}]}),hint:'Hvert lite steg er 0,1.',why:`Prikken står ${k} steg fra 0. ${k} tideler = ${fmt(k/10)}.`})}
+  if(l===2){const k=rnd(1,9);return Math.random()<.5?N(`Skriv ${k}/10 som desimaltall.`,k/10,{why:`${k} tideler = ${fmt(k/10)}.`}):F(`Skriv ${fmt(k/10)} som brøk med nevner 10.`,k,10,{exact:true,why:`${fmt(k/10)} er ${k} tideler = ${k}/10.`})}
+  const a=rnd(1,49)/10,b=rnd(1,49)/10;if(a===b)return N('Hva er 0,5 + 0,5?',1,{why:'To halve blir én hel.'});return pick([()=>C(`Hvilket tall er størst: ${fmt(a)} eller ${fmt(b)}?`,fmt(Math.max(a,b)),[fmt(Math.min(a,b))],{why:'Sammenlign de hele først, så tidelene.'}),()=>{const x=rnd(1,20)/10*1,y=rnd(1,9)/10;return N(`${fmt(x)} + ${fmt(y)} = ?`,+(x+y).toFixed(1),{why:`Legg sammen tidelene: ${fmt(+(x+y).toFixed(1))}.`})}])()}});
+
+unit({id:'t4-areal',c:'t4',icon:'🟩',title:'Omkrets og areal',
+ cards:[
+  {h:'Omkrets = gjerdet rundt',t:`<p>Du bygger et gjerde rundt hagen din i Minecraft. Hvor mange gjerdebiter trenger du? Det er <b>omkretsen</b>: summen av alle sidene.</p><p>En hage på 5 · 3 har omkrets 5 + 3 + 5 + 3 = <b>16</b>.</p>`,v:V.grid(3,5)},
+  {h:'Areal = gulvet inni',t:`<p>Hvor mange gressblokker trenger du for å dekke hele gulvet? Det er <b>arealet</b>.</p><p>3 rader med 5 blokker: 3 · 5 = <b>15</b>.</p>${tr('Areal i et rektangel = lengde · bredde. Omkrets = alle sidene lagt sammen.')}`}
+ ],
+ gen(l){const w=rnd(2,l===1?6:9),h=rnd(2,l===1?5:8);const vis=l<3?V.grid(h,w):`<div class="center" style="font-weight:900;font-size:20px">Rektangel: ${w} m lang og ${h} m bred</div>`;
+  return Math.random()<.5?N(`Hva er <b>arealet</b>${l<3?' (antall blokker)':' i m²'}?`,w*h,{vis,hint:'Lengde · bredde.',why:`${w} · ${h} = ${w*h}.`}):N(`Hva er <b>omkretsen</b>${l<3?' (antall blokkesider rundt)':' i meter'}?`,2*(w+h),{vis,hint:'Legg sammen alle fire sidene.',why:`${w} + ${h} + ${w} + ${h} = ${2*(w+h)}.`})}});
+
+unit({id:'t4-koord',c:'t4',icon:'🗺️',title:'Koordinatsystem',
+ cards:[
+  {h:'Først bortover, så opp',t:`<p>Et punkt skrives som <b>(x, y)</b>. x er hvor langt <b>bortover</b> du går. y er hvor langt <b>opp</b>.</p><p>Tenk: først går du langs gangen, så tar du heisen opp. Punktet A er (3, 5).</p>`,v:V.coord([{x:3,y:5,l:'A'}])},
+  {h:'Minecraft bruker koordinater',t:`<p>I Minecraft kan du se koordinatene dine (x, y, z). Slik finner du tilbake til basen din! I matte på skolen bruker vi bare x og y.</p>${tr('«Gå før du flyr»: x først, så y.')}`}
+ ],
+ gen(l){const x=rnd(0,8),y=rnd(0,8);
+  if(l<3)return {q:'Hva er koordinatene til punktet A?',a:[x,y],kind:'coord',show:`(${x}, ${y})`,vis:V.coord([{x,y,l:'A'}]),hint:'Først bortover (x), så opp (y).',why:`A står ${x} bortover og ${y} opp: (${x}, ${y}).`};
+  const pts=[];const L=['A','B','C'];while(pts.length<3){const p={x:rnd(0,8),y:rnd(0,8)};if(!pts.some(q=>q.x===p.x&&q.y===p.y)&&!pts.some(q=>q.x===p.y&&q.y===p.x))pts.push(p)}pts.forEach((p,i)=>p.l=L[i]);const t=pick(pts);
+  return C(`Hvilket punkt har koordinatene (${t.x}, ${t.y})?`,t.l,L,{vis:V.coord(pts),why:`Gå ${t.x} bortover og ${t.y} opp. Der står ${t.l}.`})}});
+
+unit({id:'t4-tid',c:'t4',icon:'⏱️',title:'Tid og tidsregning',
+ cards:[
+  {h:'60 minutter',t:`<p>1 time = <b>60 minutter</b>. 1 minutt = 60 sekunder. En halv time = 30 minutter, et kvarter = 15 minutter.</p>`},
+  {h:'Hvor lang tid?',t:`<p>Turntreningen er fra <b>17:15</b> til <b>18:45</b>. Hvor lenge varer den?</p><p>Hopp i hele timer først: 17:15 → 18:15 = 60 min. Så resten: 18:15 → 18:45 = 30 min. Til sammen <b>90 minutter</b>.</p>`},
+  {h:'Over timeskiftet',t:`<p>Klokka er 9:50. Hva er den om 25 minutter? 9:50 + 10 min = 10:00. Så 15 min til: <b>10:15</b>.</p>${tr('Hopp til hel time først, så resten.')}`}
+ ],
+ gen(l){if(l===1)return pick([()=>{const h=rnd(2,5);return N(`${h} timer = ? minutter`,h*60,{why:`${h} · 60 = ${h*60}.`})},()=>N('Hvor mange minutter er et kvarter?',15,{why:'En kvart time = 60 : 4 = 15 minutter.'}),()=>N('Hvor mange minutter er en halv time?',30,{why:'60 : 2 = 30.'})])();
+  const h=rnd(7,20),m=pick([0,10,15,20,30,40,45,50]);const d=l===2?pick([15,20,30,45]):pick([25,35,50,75,90,105]);const t2=h*60+m+d;const H=Math.floor(t2/60)%24,M=t2%60;const pad=x=>String(x).padStart(2,'0');
+  if(Math.random()<.5)return {q:`Klokka er ${pad(h)}:${pad(m)}. Hva er klokka om ${d} minutter?`,a:[H,M],kind:'time',show:`${pad(H)}:${pad(M)}`,hint:'Hopp til hel time først.',why:`${pad(h)}:${pad(m)} + ${d} min = ${pad(H)}:${pad(M)}.`};
+  return N(`Fotballkampen starter ${pad(h)}:${pad(m)} og slutter ${pad(H)}:${pad(M)}. Hvor mange minutter varer den?`,d,{hint:'Hopp i hele timer, så resten.',why:`Fra ${pad(h)}:${pad(m)} til ${pad(H)}:${pad(M)} er det ${d} minutter.`})}});
+
+/* ---------- 5. trinn ---------- */
+unit({id:'t5-desimal',c:'t5',icon:'🔢',title:'Desimaltall: plassverdi',
+ cards:[
+  {h:'Tideler og hundredeler',t:`<p>Et turnapparat gir poengsum <b>13,45</b>. Det er 13 hele, 4 <b>tideler</b> og 5 <b>hundredeler</b>.</p><p>I rutenettet er hele ruta 1. Hver kolonne er 0,1, og hver liten rute er 0,01.</p>`,v:V.dec100(45)},
+  {h:'Fellen: 0,8 eller 0,75?',t:`<p>Mange tror 0,75 er størst fordi 75 er større enn 8. <b>Feil!</b></p><p>Legg til en null så de har like mange siffer: 0,80 og 0,75. Nå ser du at <b>0,80 er størst</b>.</p>${tr('Fyll på med nuller bak kommaet til tallene er like lange. En null bakerst endrer ikke verdien.')}`,v:V.dec100(80,'var(--grass)')+' '+V.dec100(75)},
+  {h:'Plassene etter kommaet',t:`<p>Første plass etter kommaet = <b>tideler</b>. Andre plass = <b>hundredeler</b>. Tredje = <b>tusendeler</b>.</p><p>I 2,37 er 3-tallet verdt 0,3, og 7-tallet er verdt 0,07.</p>`}
+ ],
+ gen(l){if(l===1){const k=rnd(5,95);return N('Hvor stor del av ruta er farget? Skriv som desimaltall.',k/100,{vis:V.dec100(k),hint:'Hver kolonne er 0,1, hver liten rute 0,01.',why:`${k} av 100 ruter = ${fmt(k/100)}.`})}
+  if(l===2){let a=rnd(1,9)/10,b=rnd(11,99)/100;if(Math.abs(a-b)<1e-9)b+=.01;return C(`Hvilket tall er størst: ${fmt(a)} eller ${fmt(b)}?`,fmt(Math.max(a,b)),[fmt(Math.min(a,b))],{hint:'Fyll på med null så de blir like lange.',why:`${fmt(a)} = ${a.toFixed(2).replace('.',',')}. Sammenlign ${a.toFixed(2).replace('.',',')} og ${b.toFixed(2).replace('.',',')}: ${fmt(Math.max(a,b))} er størst.`})}
+  const x=rnd(101,999)/100;const d1=Math.floor(x*10)%10,d2=Math.round(x*100)%10;return pick([()=>N(`Hva er verdien av sifferet ${d2} i ${fmt(x)}? (Skriv som desimaltall)`,d2/100,{why:`${d2} står på hundredelsplassen: ${fmt(d2/100)}.`}),()=>N(`Hva er ${fmt(x)} + 0,1?`,+(x+.1).toFixed(2),{why:'Tidelsifferet øker med 1.'}),()=>{const v=[x,+(x+rnd(1,9)/100).toFixed(2),+(x-rnd(1,9)/10).toFixed(2)];const s=v.slice().sort((a,b)=>a-b);return C('Hvilket tall er minst?',fmt(s[0]),v.map(fmt),{why:`Sortert: ${s.map(fmt).join(' < ')}.`})}])()}});
+
+unit({id:'t5-desregn',c:'t5',icon:'🛒',title:'Regne med desimaltall',
+ cards:[
+  {h:'Komma under komma',t:`<p>Du handler taco: lefser til <b>24,90 kr</b> og ost til <b>42,50 kr</b>. Still opp med kommaet rett under kommaet, og regn som vanlig.</p><p>24,90 + 42,50 = <b>67,40 kr</b>.</p>`,v:V.column('24,90','42,50','+')},
+  {h:'Tomme plasser = null',t:`<p><b>5 − 1,3</b>: Skriv 5 som 5,0. Da blir det 5,0 − 1,3 = <b>3,7</b>.</p>${tr('Kommaet i svaret står rett under kommaene over.')}`}
+ ],
+ gen(l){const dp=l===1?1:2;const r=n=>+n.toFixed(dp);const a=r(rnd(10,l===3?999:99)/(10**dp)*(l===1?1:1)),b=r(rnd(10,l===3?500:90)/(10**dp));
+  if(l===3&&Math.random()<.5){const p=r(rnd(1500,9900)/100);const q=r(rnd(500,p*100-100)/100);return N(`Du har ${fmt(p)} kr og kjøper en pizza til ${fmt(q)} kr. Hvor mye har du igjen?`,r(p-q),{why:`${fmt(p)} − ${fmt(q)} = ${fmt(r(p-q))}.`})}
+  if(Math.random()<.5||a<b)return N(`${fmt(a)} + ${fmt(b)} = ?`,r(a+b),{vis:l<3?V.column(a.toFixed(dp).replace('.',','),b.toFixed(dp).replace('.',','),'+'):'',hint:'Komma under komma.',why:`${fmt(a)} + ${fmt(b)} = ${fmt(r(a+b))}.`});
+  return N(`${fmt(a)} − ${fmt(b)} = ?`,r(a-b),{vis:l<3?V.column(a.toFixed(dp).replace('.',','),b.toFixed(dp).replace('.',','),'−'):'',hint:'Komma under komma. Fyll inn null der det mangler.',why:`${fmt(a)} − ${fmt(b)} = ${fmt(r(a-b))}.`})}});
+
+unit({id:'t5-likebrok',c:'t5',icon:'🍫',title:'Like brøker og forkorting',
+ cards:[
+  {h:'Samme mengde, flere biter',t:`<p>Del en sjokolade i 2 og ta én bit: ${frac(1,2)}. Del den i 4 og ta to biter: ${frac(2,4)}. Du har fått <b>like mye sjokolade</b>!</p>`,v:V.bar(1,2,'var(--dirt)')+V.bar(2,4,'var(--dirt)')+V.bar(4,8,'var(--dirt)')},
+  {h:'Utvide: gang oppe og nede',t:`<p>Gang teller og nevner med <b>samme tall</b>, så får du en like stor brøk:</p><p>${frac(1,3)} = ${frac('1·2','3·2')} = ${frac(2,6)}</p>`},
+  {h:'Forkorte: del oppe og nede',t:`<p>Del teller og nevner med samme tall: ${frac(6,8)} = ${frac('6:2','8:2')} = ${frac(3,4)}.</p>${tr('Forkort så langt du kan. Finn et tall som går opp i både teller og nevner.')}`}
+ ],
+ gen(l){if(l===1){const d=pick([2,3,4,5]),n=rnd(1,d-1),k=rnd(2,4);return N(`${n}/${d} = ?/${d*k}`,n*k,{vis:V.bar(n,d,'var(--dirt)')+V.bar(n*k,d*k,'var(--dirt)'),hint:`Nevneren ble ganget med ${k}. Gjør det samme med telleren.`,why:`${d} · ${k} = ${d*k}, så ${n} · ${k} = ${n*k}.`})}
+  if(l===2){const d=pick([2,3,4,5,6]),n=rnd(1,d-1),k=rnd(2,5);const g=gcd(n,d);return F(`Forkort ${n*k}/${d*k} så mye som mulig.`,n/g,d/g,{exact:true,hint:`Hvilket tall går opp i både ${n*k} og ${d*k}?`,why:`Del oppe og nede med ${k*g}: ${n*k}:${k*g} = ${n/g}, ${d*k}:${k*g} = ${d/g}.`})}
+  const[a,b,c,d]=[rnd(1,5),pick([3,4,5,6,8]),rnd(1,5),pick([3,4,5,6,8])];if(a>=b||c>=d||a*d===c*b)return C('Er 2/4 og 1/2 like store?','Ja',['Nei'],{why:'2/4 forkortet med 2 blir 1/2.'});const big=a/b>c/d?`${a}/${b}`:`${c}/${d}`;
+  return C(`Hvilken brøk er størst: ${a}/${b} eller ${c}/${d}?`,big,[`${a}/${b}`,`${c}/${d}`],{vis:V.bar(a,b)+V.bar(c,d,'var(--sky)'),hint:'Se på stengene, eller gjør nevnerne like.',why:`${a}/${b} = ${fmt(+(a/b).toFixed(2))} og ${c}/${d} = ${fmt(+(c/d).toFixed(2))}. ${big} er størst.`})}});
+
+unit({id:'t5-prosent',c:'t5',icon:'🔋',title:'Prosent',
+ cards:[
+  {h:'Prosent = av hundre',t:`<p>«Pro cent» betyr «av hundre». <b>45 %</b> betyr 45 av 100 ruter.</p><p>Batteriet på elbilen viser 45 %: litt under halvfullt.</p>`,v:V.dec100(45,'var(--grass)')},
+  {h:'Viktige prosenter',t:`<p><b>100 %</b> = alt. <b>50 %</b> = halvparten. <b>25 %</b> = en fjerdedel. <b>10 %</b> = en tiendedel.</p>${tr('10 % av et tall: del på 10. 10 % av 300 kr = 30 kr.')}`},
+  {h:'Salg i butikken',t:`<p>Et spill koster 400 kr, og det er <b>25 % rabatt</b>. 25 % er en fjerdedel: 400 : 4 = 100 kr rabatt. Du betaler 300 kr.</p>`}
+ ],
+ gen(l){if(l===1){const k=rnd(5,95);return N('Hvor mange prosent av ruta er farget?',k,{vis:V.dec100(k,'var(--grass)'),why:`${k} av 100 ruter = ${k} %.`})}
+  if(l===2){const p=pick([50,25,10]),v=p===50?rnd(2,40)*2:p===25?rnd(2,25)*4:rnd(2,50)*10;return N(`Hva er ${p} % av ${v}?`,v*p/100,{hint:p===50?'Halvparten.':p===25?'En fjerdedel: del på 4.':'Del på 10.',why:`${p} % = ${p===50?'1/2':p===25?'1/4':'1/10'}. ${v} : ${100/p} = ${v*p/100}.`})}
+  return pick([()=>{const v=rnd(2,9)*100,p=pick([10,20,25,50]);return N(`Et spill koster ${v} kr. Det er ${p} % rabatt. Hvor mye koster det nå?`,v-v*p/100,{why:`${p} % av ${v} = ${v*p/100}. ${v} − ${v*p/100} = ${v-v*p/100}.`})},()=>{const a=rnd(1,19)*5;return C(`Hva er ${a} % som brøk av 100?`,`${a}/100`,[`${a}/10`,`1/${a}`,`${100-a}/100`],{why:`Prosent betyr hundredeler: ${a} % = ${a}/100.`})},()=>{const n=pick([20,25,50,10]);const k=rnd(1,n-1);return N(`${k} av ${n} elever liker pizza best. Hvor mange prosent er det?`,k*100/n,{why:`${k}/${n} = ${k*100/n}/100 = ${k*100/n} %.`})}])()}});
+
+unit({id:'t5-negative',c:'t5',icon:'⛏️',title:'Negative tall',
+ cards:[
+  {h:'Under null',t:`<p>Om vinteren kan det være <b>−5 °C</b>: fem grader <i>under</i> null. I Minecraft graver du dypt ned under havnivå, og y-koordinaten blir negativ.</p>`,v:V.thermo(-5)},
+  {h:'Tallinja fortsetter',t:`<p>Til venstre for 0 kommer −1, −2, −3 … Jo lenger til venstre, jo <b>mindre</b> er tallet.</p><p>Så −3 er <b>større</b> enn −7, akkurat som −3 °C er varmere enn −7 °C.</p>`,v:V.numline(-8,4,{marks:[{v:-7,l:'−7',c:'var(--sky)'},{v:-3,l:'−3'}]})},
+  {h:'Hvor langt er det?',t:`<p>Fra −4 °C til 6 °C: Først 4 grader opp til 0, så 6 til. Til sammen <b>10 grader</b>.</p>${tr('Gå via null!')}`,v:V.numline(-5,7,{jumps:[[-4,0,'+4'],[0,6,'+6']]})}
+ ],
+ gen(l){if(l===1){const t=rnd(-15,15);return N('Hvor mange grader viser termometeret?',t,{vis:V.thermo(t),hint:'Under null? Husk minustegnet.',why:`Den røde søylen står ved ${fmt(t)} °C.`})}
+  if(l===2){let a=rnd(-10,5),b=rnd(-10,5);while(a===b)b=rnd(-10,5);return C(`Hvilket tall er størst: ${fmt(a)} eller ${fmt(b)}?`,fmt(Math.max(a,b)),[fmt(Math.min(a,b))],{vis:V.numline(-10,5,{marks:[{v:a,l:fmt(a),c:'var(--sky)'},{v:b,l:fmt(b)}]}),why:`${fmt(Math.max(a,b))} står lengst til høyre på tallinja.`})}
+  return pick([()=>{const a=rnd(-9,-1),b=rnd(1,9);return N(`Det er ${fmt(a)} °C om morgenen og ${b} °C om ettermiddagen. Hvor mange grader steg temperaturen?`,b-a,{why:`Fra ${fmt(a)} til 0 er ${-a}, fra 0 til ${b} er ${b}. ${-a} + ${b} = ${b-a}.`})},()=>{const a=rnd(1,8),b=rnd(a+1,12);return N(`Det er ${a} °C og temperaturen synker ${b} grader. Hva blir temperaturen?`,a-b,{why:`${a} − ${b} = ${fmt(a-b)}.`})},()=>{const y=rnd(-50,-10),d=rnd(5,20);return N(`Steve står på y = ${fmt(y)} og graver ${d} blokker rett ned. Hva blir y?`,y-d,{why:`${fmt(y)} − ${d} = ${fmt(y-d)}.`})}])()}});
+
+unit({id:'t5-snitt',c:'t5',icon:'🤸',title:'Gjennomsnitt',
+ cards:[
+  {h:'Del rettferdig',t:`<p>Tre turnere fikk <b>6, 8 og 10</b> poeng. Legg alt i én haug: 6 + 8 + 10 = 24. Del likt på 3: 24 : 3 = <b>8</b>.</p><p>Gjennomsnittet er 8.</p>`,v:V.barChart([{l:'Ida',v:6},{l:'Ali',v:8},{l:'Jon',v:10}],'Poeng')},
+  {h:'Oppskrift',t:`${tr('1) Legg sammen alle tallene. 2) Del på hvor mange tall det er.')}<p>Gjennomsnittet er det alle ville fått hvis vi jevnet ut søylene.</p>`}
+ ],
+ gen(l){const n=l===1?2:l===2?3:pick([4,5]);const m=rnd(3,l===3?20:12);let v=Array.from({length:n},()=>m+rnd(-3,3));const diff=m*n-v.reduce((a,b)=>a+b,0);v[0]+=diff;if(v[0]<0)v[0]=0;const s=v.reduce((a,b)=>a+b,0);
+  if(s%n)return N(`Hva er gjennomsnittet av ${m} og ${m}?`,m,{why:`${m} + ${m} = ${2*m}, delt på 2 = ${m}.`});
+  return N(`${l===3?'Målene i serien var':'Finn gjennomsnittet av'}: <b>${v.join(', ')}</b>${l===3?'. Hva er gjennomsnittet?':''}`,s/n,{vis:l<3?V.barChart(v.map((x,i)=>({l:String.fromCharCode(65+i),v:x}))):'',hint:'Legg sammen, og del på hvor mange tall det er.',why:`${v.join(' + ')} = ${s}. ${s} : ${n} = ${s/n}.`})}});
+
+unit({id:'t5-ukjent',c:'t5',icon:'🕵️',title:'Den ukjente: enkle likninger',
+ cards:[
+  {h:'Hva er i kista?',t:`<p>Noen har gjemt et tall i en kiste: <b>▢ + 7 = 15</b>. Hvilket tall er det?</p><p>Spør: «Hva + 7 blir 15?» Svaret er <b>8</b>.</p>`,v:V.balance('▢ + 7','15')},
+  {h:'Gjør det motsatte',t:`<p>Står det <b>+ 7</b>? Gjør det motsatte: 15 − 7 = 8.<br>Står det <b>· 4</b>? Del: 20 : 4 = 5.</p><p>Vi bruker ofte bokstaven <b>x</b> i stedet for en kiste.</p>${tr('Sjekk alltid: sett tallet inn og se om det stemmer.')}`}
+ ],
+ gen(l){const x=rnd(2,12);if(l===1){const a=rnd(2,15);return Math.random()<.5?N(`▢ + ${a} = ${x+a}`,x,{hint:`Regn ${x+a} − ${a}.`,why:`${x+a} − ${a} = ${x}. Sjekk: ${x} + ${a} = ${x+a}.`}):N(`▢ − ${a} = ${x}`,x+a,{hint:`Gjør det motsatte: ${x} + ${a}.`,why:`${x} + ${a} = ${x+a}.`})}
+  if(l===2){const a=rnd(2,9);return Math.random()<.5?N(`${a} · x = ${a*x}. Hva er x?`,x,{fact:[a,x],hint:`Del ${a*x} på ${a}.`,why:`${a*x} : ${a} = ${x}.`}):N(`x : ${a} = ${x}. Hva er x?`,a*x,{fact:[a,x],why:`Gjør det motsatte: ${x} · ${a} = ${a*x}.`})}
+  const a=rnd(2,5),b=rnd(1,10);return N(`${a}x + ${b} = ${a*x+b}. Hva er x?`,x,{hint:`Fjern først + ${b}, så del på ${a}.`,why:`${a*x+b} − ${b} = ${a*x}. ${a*x} : ${a} = ${x}.`})}});
+
+/* ---------- 6. trinn ---------- */
+unit({id:'t6-ti',c:'t6',icon:'⚡',title:'Gange og dele med 10, 100, 1000',
+ cards:[
+  {h:'Kommaet hopper',t:`<p>Når du ganger med 10, blir tallet 10 ganger større: kommaet hopper <b>ett steg til høyre</b>.</p><p>3,7 · 10 = 37 &nbsp;·&nbsp; 3,7 · 100 = 370 (fyll inn null).</p>`},
+  {h:'Dele = hopp til venstre',t:`<p>Deler du med 10, hopper kommaet ett steg til <b>venstre</b>: 45 : 10 = 4,5.<br>45 : 100 = 0,45.</p>${tr('Tell nullene! 1000 har tre nuller = tre hopp.')}`}
+ ],
+ gen(l){const m=pick(l===1?[10]:[10,100,1000]);const mul=l===1?Math.random()<.6:Math.random()<.5;const x=l===1?rnd(11,99)/10:rnd(101,9999)/100;
+  if(mul)return N(`${fmt(x)} · ${m} = ?`,+(x*m).toFixed(4),{hint:`Kommaet hopper ${String(m).length-1} steg til høyre.`,why:`${fmt(x)} · ${m} = ${fmt(+(x*m).toFixed(4))}. Kommaet flyttet seg ${String(m).length-1} plass(er) til høyre.`});
+  const y=l===1?rnd(11,999):rnd(11,9999);return N(`${y} : ${m} = ?`,+(y/m).toFixed(4),{hint:`Kommaet hopper ${String(m).length-1} steg til venstre.`,why:`${y} : ${m} = ${fmt(y/m)}.`})}});
+
+unit({id:'t6-brokregn',c:'t6',icon:'🧁',title:'Pluss og minus med brøk',
+ cards:[
+  {h:'Lik nevner: tell biter',t:`<p>${frac(2,8)} + ${frac(3,8)}: Du har 2 åttedels-biter og får 3 til. Nå har du 5 biter: ${frac(5,8)}.</p><p>Nevneren endres <b>ikke</b>! Bitene blir ikke større av at du får flere av dem.</p>`,v:V.bar(5,8,'var(--gold)')},
+  {h:'Ulik nevner: gjør bitene like',t:`<p>${frac(1,2)} + ${frac(1,4)}: Halve og fjerdedeler kan ikke telles sammen. Gjør om ${frac(1,2)} til ${frac(2,4)}.</p><p>${frac(2,4)} + ${frac(1,4)} = ${frac(3,4)}.</p>${tr('Feilen alle gjør: 1/2 + 1/4 = 2/6. NEI! Ikke legg sammen nevnerne.')}`,v:V.bar(2,4)+V.bar(1,4,'var(--sky)')}
+ ],
+ gen(l){if(l===1){const d=pick([4,5,6,8,10,12]),a=rnd(1,d-2),b=rnd(1,d-1-a);return Math.random()<.6?F(`${a}/${d} + ${b}/${d} = ?`,a+b,d,{hint:'Tell bitene. Nevneren blir den samme.',why:`${a} + ${b} = ${a+b} biter: ${a+b}/${d}.`}):F(`${a+b}/${d} − ${b}/${d} = ?`,a,d,{why:`${a+b} − ${b} = ${a}: ${a}/${d}.`})}
+  const d1=pick([2,3,4,5]),k=pick([2,3]),d2=d1*k,a=rnd(1,d1-1),b=rnd(1,d2-1);const A=a*k;
+  if(l===2||A+b>d2*1.5){if(A+b<=d2)return F(`${a}/${d1} + ${b}/${d2} = ?`,A+b,d2,{hint:`Gjør om ${a}/${d1} til ${d2}-deler.`,why:`${a}/${d1} = ${A}/${d2}. ${A}/${d2} + ${b}/${d2} = ${A+b}/${d2}.`});}
+  if(A>b)return F(`${a}/${d1} − ${b}/${d2} = ?`,A-b,d2,{hint:`Gjør om ${a}/${d1} til ${d2}-deler.`,why:`${a}/${d1} = ${A}/${d2}. ${A} − ${b} = ${A-b}: ${A-b}/${d2}.`});
+  return F(`${a}/${d1} + ${b}/${d2} = ?`,A+b,d2,{why:`${a}/${d1} = ${A}/${d2}. ${A}/${d2} + ${b}/${d2} = ${A+b}/${d2}.`})}});
+
+unit({id:'t6-brokav',c:'t6',icon:'💰',title:'Brøkdel av et antall',
+ cards:[
+  {h:'Del først, gang så',t:`<p>Du har 20 diamanter og skal gi bort ${frac(3,4)}. Hvor mange er det?</p><p>1) <b>Del på nevneren:</b> 20 : 4 = 5 (det er én fjerdedel).<br>2) <b>Gang med telleren:</b> 5 · 3 = <b>15</b>.</p>`,v:V.grid(4,5,{top:'var(--sky)',body:'var(--sky-d)'})},
+  {h:'Hurtigtriks',t:`${tr('«Del nede, gang oppe.» Først nevner, så teller.')}<p>${frac(2,3)} av 12 kr: 12 : 3 = 4, 4 · 2 = 8 kr.</p>`}
+ ],
+ gen(l){const d=pick(l===1?[2,3,4,5]:[3,4,5,6,8,10]),n=l===1?1:rnd(1,d-1),one=rnd(2,l===3?16:10),tot=d*one;
+  if(l===3&&Math.random()<.6)return pick([()=>{const[sn,sd]=pick([[1,2],[1,4],[3,4],[1,8],[3,8],[5,8]]);return N(`En stack i Minecraft er 64 blokker. Hvor mange blokker er ${sn}/${sd} av en stack?`,64/sd*sn,{why:`64 : ${sd} = ${64/sd}. ${64/sd} · ${sn} = ${64/sd*sn}.`})},()=>N(`Turnlaget har ${tot} medlemmer. ${n}/${d} av dem konkurrerer. Hvor mange er det?`,n*one,{why:`${tot} : ${d} = ${one}. ${one} · ${n} = ${n*one}.`})])();
+  return N(`Hva er ${n}/${d} av ${tot}?`,n*one,{vis:l===1?V.grid(d,one,{top:'var(--sky)',body:'var(--sky-d)'}):'',hint:`Del ${tot} på ${d}, og gang med ${n}.`,why:`${tot} : ${d} = ${one}. ${one} · ${n} = ${n*one}.`})}});
+
+unit({id:'t6-bdp',c:'t6',icon:'🔄',title:'Brøk, desimaltall og prosent',
+ cards:[
+  {h:'Samme tall, tre drakter',t:`<p>En halv kan kle seg ut på tre måter: ${frac(1,2)} = <b>0,5</b> = <b>50 %</b>. Det er akkurat samme mengde pizza!</p>`,v:V.pie(1,2)},
+  {h:'Superviktige par',t:`<table style="font-size:19px;font-weight:800;border-collapse:collapse"><tr><td style="padding:4px 14px">1/2</td><td style="padding:4px 14px">0,5</td><td style="padding:4px 14px">50 %</td></tr><tr><td style="padding:4px 14px">1/4</td><td style="padding:4px 14px">0,25</td><td style="padding:4px 14px">25 %</td></tr><tr><td style="padding:4px 14px">3/4</td><td style="padding:4px 14px">0,75</td><td style="padding:4px 14px">75 %</td></tr><tr><td style="padding:4px 14px">1/10</td><td style="padding:4px 14px">0,1</td><td style="padding:4px 14px">10 %</td></tr><tr><td style="padding:4px 14px">1/5</td><td style="padding:4px 14px">0,2</td><td style="padding:4px 14px">20 %</td></tr></table>${tr('Desimaltall → prosent: gang med 100 (kommaet to hopp til høyre). 0,35 = 35 %.')}`}
+ ],
+ gen(l){const P=[[1,2],[1,4],[3,4],[1,10],[1,5],[2,5],[3,10],[7,10],[1,20],[3,5]];const [n,d]=pick(l===1?P.slice(0,5):P);const dec=n/d,pc=Math.round(dec*100);
+  const T=[()=>N(`Skriv ${n}/${d} som desimaltall.`,dec,{hint:`Gjør nevneren til 10 eller 100.`,why:`${n}/${d} = ${pc}/100 = ${fmt(dec)}.`}),()=>N(`Hvor mange prosent er ${n}/${d}?`,pc,{why:`${n}/${d} = ${pc}/100 = ${pc} %.`}),()=>N(`Skriv ${fmt(dec)} som prosent.`,pc,{hint:'Gang med 100.',why:`${fmt(dec)} · 100 = ${pc} %.`}),()=>F(`Skriv ${pc} % som brøk, forkortet så mye som mulig.`,n,d,{exact:true,why:`${pc} % = ${pc}/100 = ${n}/${d}.`})];
+  return pick(l===1?T.slice(0,2):l===2?T.slice(0,3):T)()}});
+
+unit({id:'t6-vinkler',c:'t6',icon:'📐',title:'Vinkler',
+ cards:[
+  {h:'Rett vinkel = 90°',t:`<p>Hjørnet på en Minecraft-blokk eller et A4-ark er en <b>rett vinkel</b>: 90 grader. Vi tegner en liten firkant i hjørnet.</p>`,v:V.angle(90)},
+  {h:'Spiss og stump',t:`<p><b>Spiss</b> vinkel: mindre enn 90° (spiss som en pizzabit).<br><b>Stump</b> vinkel: mellom 90° og 180° (åpen som en laptop som er slått langt bakover).<br><b>Rett linje</b>: 180°.</p>`,v:V.angle(130)},
+  {h:'Turn og skruer',t:`<p>En hel skru i turn er <b>360°</b> – du snurrer helt rundt. En halv skru er 180°, og en kvart er 90°.</p>${tr('Vinklene i en trekant er alltid 180° til sammen.')}`}
+ ],
+ gen(l){if(l===1){const d=pick([rnd(20,80),90,rnd(100,170)]);const k=d<90?'Spiss':d===90?'Rett':'Stump';return C('Hva slags vinkel er dette?',k,['Spiss','Rett','Stump'],{vis:V.angle(d),why:`Vinkelen er ca. ${d}°. ${d<90?'Mindre enn 90° = spiss.':d===90?'Nøyaktig 90° = rett.':'Mellom 90° og 180° = stump.'}`})}
+  if(l===2){const d=pick([30,45,60,90,120,150]);return C('Omtrent hvor mange grader er vinkelen?',d+'°',[30,45,60,90,120,150].filter(x=>x!==d).sort(()=>Math.random()-.5).slice(0,3).map(x=>x+'°'),{vis:V.angle(d),hint:'Sammenlign med en rett vinkel (90°).',why:`Vinkelen er ${d}°. ${d<90?'Den er mindre enn rett vinkel.':d===90?'Den er rett.':'Den er større enn rett vinkel.'}`})}
+  return pick([()=>{const a=rnd(30,80),b=rnd(30,150-a);return N(`I en trekant er to vinkler ${a}° og ${b}°. Hvor stor er den tredje?`,180-a-b,{hint:'Alle tre blir 180° til sammen.',why:`180 − ${a} − ${b} = ${180-a-b}°.`})},()=>C('Hvor mange grader er en hel skru i turn?','360°',['180°','90°','100°'],{why:'Helt rundt = 360°.'}),()=>{const a=rnd(20,160);return N(`To vinkler ligger langs en rett linje. Den ene er ${a}°. Hvor stor er den andre?`,180-a,{why:`En rett linje er 180°. 180 − ${a} = ${180-a}°.`})}])()}});
+
+unit({id:'t6-volum',c:'t6',icon:'📦',title:'Volum',
+ cards:[
+  {h:'Hvor mange blokker får plass?',t:`<p>Volum er hvor mye plass noe tar – hvor mange blokker du trenger for å fylle en boks.</p><p>Denne er 4 lang, 3 bred og 2 høy. Ett lag har 4 · 3 = 12 blokker. To lag: 12 · 2 = <b>24</b>.</p>`,v:V.box(4,3,2)},
+  {h:'Formelen',t:`${tr('Volum = lengde · bredde · høyde')}<p>Måler vi i centimeter, blir svaret i <b>kubikkcentimeter (cm³)</b>. 1 liter = 1 dm³ = en terning som er 10 cm på hver kant.</p>`}
+ ],
+ gen(l){const a=rnd(2,l===1?4:5),b=rnd(1,l===1?3:4),c=rnd(1,l===1?2:4);
+  if(l<3)return N('Hvor mange blokker er det i boksen?',a*b*c,{vis:V.box(a,b,c),hint:'Tell blokkene i det øverste laget, og gang med antall lag.',why:`${a} · ${b} = ${a*b} per lag. ${a*b} · ${c} lag = ${a*b*c}.`});
+  const x=rnd(2,12),y=rnd(2,10),z=rnd(2,10);return N(`En eske er ${x} cm lang, ${y} cm bred og ${z} cm høy. Hva er volumet i cm³?`,x*y*z,{why:`${x} · ${y} · ${z} = ${x*y*z} cm³.`})}});
+
+unit({id:'t6-malestokk',c:'t6',icon:'🧭',title:'Målestokk',
+ cards:[
+  {h:'Kart og modeller',t:`<p>En modellbil i <b>1 : 18</b> betyr at den ekte bilen er 18 ganger større. 1 cm på modellen = 18 cm i virkeligheten.</p>`},
+  {h:'Kart: 1 : 100 000',t:`<p>På et kart i 1 : 100 000 er 1 cm = 100 000 cm = <b>1 km</b>. Måler du 4 cm på kartet, er det 4 km i virkeligheten.</p>${tr('Gang kartlengden med tallet etter kolon. Gjør om til meter eller km til slutt.')}`}
+ ],
+ gen(l){if(l===1){const s=pick([10,18,20,50]),c=rnd(2,12);return N(`En modell er laget i målestokk 1 : ${s}. Den er ${c} cm lang. Hvor lang er den i virkeligheten (cm)?`,c*s,{why:`${c} · ${s} = ${c*s} cm.`})}
+  if(l===2){const c=rnd(2,9);return N(`Kartet har målestokk 1 : 100 000. Avstanden på kartet er ${c} cm. Hvor mange km er det?`,c,{hint:'1 cm = 100 000 cm = 1 km.',why:`${c} cm · 100 000 = ${c*100000} cm = ${c} km.`})}
+  const s=pick([100,200,50]),m=rnd(2,10);return N(`En tegning av et hus har målestokk 1 : ${s}. En vegg er ${m} cm på tegningen. Hvor mange meter er veggen i virkeligheten?`,m*s/100,{hint:`Gang med ${s}, og gjør om cm til m (del på 100).`,why:`${m} cm · ${s} = ${m*s} cm = ${fmt(m*s/100)} m.`})}});
+
+unit({id:'t6-stat',c:'t6',icon:'📈',title:'Median, typetall og variasjonsbredde',
+ cards:[
+  {h:'Typetall',t:`<p><b>Typetallet</b> er verdien som forekommer <b>oftest</b>. Skostørrelser i klassen: 38, 39, 39, 40, 39. Typetallet er 39.</p>`},
+  {h:'Median: den i midten',t:`<p>Sorter tallene fra minst til størst. <b>Medianen</b> er tallet i midten.</p><p>3, 5, <b>7</b>, 8, 12 → medianen er 7.</p>${tr('Partall antall tall? Ta gjennomsnittet av de to i midten.')}`},
+  {h:'Variasjonsbredde',t:`<p>Største minus minste. Tider på 60 meter: 8,2 og 10,5 sek → variasjonsbredde 2,3 sek. Den sier hvor spredt resultatene er.</p>`}
+ ],
+ gen(l){const n=pick(l===1?[5,7]:[5,6,7]);let v=Array.from({length:n},()=>rnd(1,20));
+  const T=[()=>{const s=v.slice().sort((a,b)=>a-b);if(n%2===0)v.push(rnd(1,20));const s2=v.slice().sort((a,b)=>a-b);return N(`Finn <b>medianen</b>: ${v.join(', ')}`,s2[(s2.length-1)/2],{hint:'Sorter først.',why:`Sortert: ${s2.join(', ')}. Midterste tall er ${s2[(s2.length-1)/2]}.`})},
+   ()=>{const t=pick(v);v=[...new Set(v)].filter(x=>x!==t);v.push(t,t,t);v=shuffle(v);return N(`Finn <b>typetallet</b>: ${v.join(', ')}`,t,{why:`${t} forekommer flest ganger.`})},
+   ()=>N(`Finn <b>variasjonsbredden</b>: ${v.join(', ')}`,Math.max(...v)-Math.min(...v),{why:`Største ${Math.max(...v)} − minste ${Math.min(...v)} = ${Math.max(...v)-Math.min(...v)}.`}),
+   ()=>{const w=Array.from({length:6},()=>rnd(1,20));const s=w.slice().sort((a,b)=>a-b);return N(`Finn <b>medianen</b>: ${w.join(', ')}`,(s[2]+s[3])/2,{hint:'Seks tall: ta gjennomsnittet av de to i midten.',why:`Sortert: ${s.join(', ')}. (${s[2]} + ${s[3]}) : 2 = ${fmt((s[2]+s[3])/2)}.`})}];
+  return pick(l===1?T.slice(0,2):l===2?T.slice(0,3):T)()}});
+
+unit({id:'t6-sanns',c:'t6',icon:'🎲',title:'Sannsynlighet',
+ cards:[
+  {h:'Gunstige delt på mulige',t:`<p>Hva er sjansen for å få 6 på en terning? Det er <b>6 mulige</b> utfall og <b>1 gunstig</b> (sekseren).</p><p>Sannsynligheten er ${frac(1,6)}.</p>${tr('Sannsynlighet = gunstige / mulige')}`},
+  {h:'Fra umulig til sikker',t:`<p>0 = <b>umulig</b> (terningen viser 7). 1 = <b>sikker</b> (terningen viser et tall fra 1 til 6). ${frac(1,2)} = like stor sjanse begge veier, som mynt eller kron.</p>`,v:V.numline(0,1,{step:.25,label:.5,marks:[{v:0,l:'umulig',c:'var(--red)'},{v:.5,l:'50/50',c:'var(--sky)'},{v:1,l:'sikker',c:'var(--grass)'}]})}
+ ],
+ gen(l){if(l===1)return pick([()=>{const k=rnd(1,6);return F(`Hva er sannsynligheten for å få ${k} på en vanlig terning?`,1,6,{why:'1 gunstig av 6 mulige: 1/6.'})},()=>F('Hva er sannsynligheten for å få mynt når du kaster en mynt?',1,2,{why:'2 mulige (mynt, kron), 1 gunstig: 1/2.'}),()=>C('Hvor sannsynlig er det at terningen viser 7?','Umulig',['Sikker','Like sannsynlig','Sannsynlig'],{why:'Terningen har bare 1–6.'})])();
+  const r=rnd(1,6),g=rnd(1,6),b=rnd(1,5),tot=r+g+b;
+  if(l===2)return F(`I en pose er det ${r} røde, ${g} grønne og ${b} blå kuler. Du trekker én. Hva er sannsynligheten for <b>rød</b>?`,r,tot,{vis:`<div class="center" style="font-size:26px">${'🔴'.repeat(r)}${'🟢'.repeat(g)}${'🔵'.repeat(b)}</div>`,why:`${r} gunstige av ${tot} mulige: ${r}/${tot}.`});
+  return pick([()=>F('Hva er sannsynligheten for å få et partall på en terning?',3,6,{why:'Partall: 2, 4, 6 → 3 av 6 = 1/2.'}),()=>F(`En kiste i Minecraft har ${tot} gjenstander: ${r} diamanter og ${tot-r} kull. Du tar én tilfeldig. Hva er sannsynligheten for <b>ikke</b> diamant?`,tot-r,tot,{why:`${tot-r} er ikke diamanter: ${tot-r}/${tot}.`}),()=>F('Hva er sannsynligheten for å få mer enn 4 på en terning?',2,6,{why:'5 og 6 → 2 av 6 = 1/3.'})])()}});
+
+unit({id:'t6-rekkefolge',c:'t6',icon:'🧠',title:'Regnerekkefølge',
+ cards:[
+  {h:'Hvem går først?',t:`<p>Regnestykker har en køordning, akkurat som i kantina:</p><p><b>1. Parenteser</b> &nbsp; <b>2. Gange og dele</b> &nbsp; <b>3. Pluss og minus</b></p>`},
+  {h:'Eksempel',t:`<p><b>2 + 3 · 4</b>: Gange først! 3 · 4 = 12, så 2 + 12 = <b>14</b>. (Ikke 20!)</p><p><b>(2 + 3) · 4</b>: Parentes først: 5 · 4 = <b>20</b>.</p>${tr('Strek over gange-/delestykkene med blyant, så ser du hva du skal regne først.')}`}
+ ],
+ gen(l){const a=rnd(2,9),b=rnd(2,9),c=rnd(2,9);if(l===1)return Math.random()<.5?N(`${a} + ${b} · ${c} = ?`,a+b*c,{fact:[b,c],hint:'Gange først.',why:`${b} · ${c} = ${b*c}. ${a} + ${b*c} = ${a+b*c}.`}):N(`${a*c} − ${b} · ${c} = ?`.replace(`${a*c} −`,`${a*c+b*c} −`),a*c,{why:`${b} · ${c} = ${b*c}. ${a*c+b*c} − ${b*c} = ${a*c}.`});
+  if(l===2)return N(`(${a} + ${b}) · ${c} = ?`,(a+b)*c,{hint:'Parentesen først.',why:`${a} + ${b} = ${a+b}. ${a+b} · ${c} = ${(a+b)*c}.`});
+  const d=rnd(2,5);return N(`${a} · ${b} + ${c*d} : ${d} = ?`,a*b+c,{hint:'Gange og dele først, så pluss.',why:`${a} · ${b} = ${a*b}, ${c*d} : ${d} = ${c}. ${a*b} + ${c} = ${a*b+c}.`})}});
+
+/* ---------- ekstra temaer ---------- */
+unit({id:'t2-penger',c:'t2',icon:'🪙',title:'Penger og handling',
+ cards:[
+  {h:'Mynter og sedler',t:`<p>Vi har mynter på <b>1, 5, 10 og 20 kr</b>, og sedler på <b>50, 100 og 200 kr</b>.</p><p>Tell alltid de største først. Da går det fortere – som å telle diamanter før kullbitene.</p>`,v:V.coins([20,10,5,1,1])},
+  {h:'Penger tilbake',t:`<p>Du kjøper en burger til <b>32 kr</b> og betaler med en femtilapp. Tell oppover fra 32: til 40 er 8, til 50 er 10. Du får <b>18 kr</b> tilbake.</p>${tr('Veksel: tell opp fra prisen til det du betalte.')}`,v:V.numline(30,50,{step:1,label:10,jumps:[[32,40,'+8'],[40,50,'+10']]})}
+ ],
+ gen(l){if(l===1){const pool=[20,10,5,1];const list=Array.from({length:rnd(2,5)},()=>pick(pool)).sort((a,b)=>b-a);const s=list.reduce((a,b)=>a+b,0);return N('Hvor mange kroner er dette til sammen?',s,{vis:V.coins(list),hint:'Tell de største myntene først.',why:`${list.join(' + ')} = ${s} kr.`})}
+  if(l===2){const pay=pick([20,50,100]),p=rnd(Math.floor(pay/3),pay-1);return N(`En is koster ${p} kr. Du betaler med ${pay} kr. Hvor mye får du tilbake?`,pay-p,{vis:V.coins([pay]),hint:`Tell opp fra ${p} til ${pay}.`,why:`${pay} − ${p} = ${pay-p} kr.`})}
+  const n=rnd(2,5),p=rnd(5,25);return N(`Du kjøper ${n} ${pick(['boller','brus','tegneserier','klistremerkepakker'])} som koster ${p} kr hver. Hva må du betale?`,n*p,{hint:`${p} kr ${n} ganger.`,why:`${n} · ${p} = ${n*p} kr.`})}});
+
+unit({id:'t3-symmetri',c:'t3',icon:'🦋',title:'Symmetri og speiling',
+ cards:[
+  {h:'Brett på midten',t:`<p>En figur er <b>symmetrisk</b> hvis du kan brette den på midten og begge halvdelene passer perfekt oppå hverandre. En sommerfugl er symmetrisk. Det er et Creeper-ansikt også!</p><p>Bretten kalles <b>symmetrilinje</b>.</p>`},
+  {h:'Speiling i rutenett',t:`<p>Når du speiler et punkt, tell hvor langt det er fra linja. Det speilede punktet er like langt unna på <b>den andre siden</b>.</p><p>A står 2 ruter til venstre for linja, så A' står 2 ruter til høyre.</p>`,v:V.coord([{x:2,y:3,l:'A'},{x:6,y:3,l:"A'",c:'var(--sky)'}],8,4)},
+  {h:'Hvor mange linjer?',t:`<p>Et kvadrat har <b>4</b> symmetrilinjer: loddrett, vannrett og to på skrå. Et rektangel har bare <b>2</b>.</p>${tr('Test med et speil eller ved å brette et ark!')}`,v:V.shape('kvadrat')}
+ ],
+ gen(l){if(l===1){const yes=pick(['A','H','M','O','T','U','V','W','X','Y']);const no=shuffle(['F','G','J','L','N','P','R','S','Z']).slice(0,3);return C('Hvilken bokstav er symmetrisk om en loddrett linje på midten?',yes,no,{hint:'Tenk deg at du bretter bokstaven på midten.',why:`${yes} ser lik ut på venstre og høyre side.`})}
+  if(l===2){const[n,nm]=pick([[4,'et kvadrat'],[2,'et rektangel'],[3,'en likesidet trekant'],[6,'en regulær sekskant'],[5,'en regulær femkant']]);return N(`Hvor mange symmetrilinjer har ${nm}?`,n,{vis:V.shape(nm.includes('kvadrat')?'kvadrat':nm.includes('rekt')?'rektangel':n),why:`${nm[0].toUpperCase()+nm.slice(1)} har ${n} symmetrilinjer.`})}
+  const m=rnd(3,5),x=rnd(0,m-1),y=rnd(1,7),mx=2*m-x;return {q:`Speil punktet A om den stiplede linja. Hva er koordinatene til A'?`,a:[mx,y],kind:'coord',show:`(${mx}, ${y})`,vis:V.coord([{x,y,l:'A'}],8,m),hint:`A står ${m-x} ruter fra linja.`,why:`A står ${m-x} til venstre for linja (x = ${m}). A' står ${m-x} til høyre: x = ${mx}. y er den samme: (${mx}, ${y}).`}}});
+
+unit({id:'t4-algoritme',c:'t4',icon:'🤖',title:'Algoritmer og programmering',
+ cards:[
+  {h:'En oppskrift for datamaskiner',t:`<p>En <b>algoritme</b> er en oppskrift steg for steg. En pannekakeoppskrift er en algoritme. En redstone-krets i Minecraft også!</p><p>En datamaskin gjør <b>nøyaktig</b> det du sier – verken mer eller mindre.</p>`},
+  {h:'Styr roboten',t:`<p>Roboten starter i (1, 1). Kommandoer: <b>→</b> ett steg høyre, <b>↑</b> ett steg opp, <b>←</b> venstre, <b>↓</b> ned.</p><p>→ → ↑ fra (1, 1) gir (3, 2).</p>`,v:V.coord([{x:1,y:1,l:'Start',c:'var(--muted)'},{x:3,y:2,l:'Mål'}],6)},
+  {h:'Løkker: gjenta',t:`<p>I stedet for å skrive «+3, +3, +3, +3» skriver programmerere: <b>gjenta 4 ganger: +3</b>. Det kalles en <b>løkke</b>.</p>${tr('Løkke = gjenta. Gjenta 4 ganger +3 er det samme som + 4 · 3.')}`}
+ ],
+ gen(l){const ar={R:['→',1,0],L:['←',-1,0],U:['↑',0,1],D:['↓',0,-1]};
+  if(l<3){let x=rnd(1,3),y=rnd(1,3);const sx=x,sy=y;const keys=l===1?['R','U']:['R','U','L','D'];const moves=[];for(let i=0;i<rnd(3,l===1?4:6);i++){const k=pick(keys);const[,dx,dy]=ar[k];if(x+dx<0||x+dx>8||y+dy<0||y+dy>8)continue;x+=dx;y+=dy;moves.push(ar[k][0])}
+   return {q:`Roboten starter i (${sx}, ${sy}) og følger koden:<br><span style="font-size:30px;letter-spacing:4px">${moves.join(' ')}</span><br>Hvor havner den?`,a:[x,y],kind:'coord',show:`(${x}, ${y})`,vis:V.coord([{x:sx,y:sy,l:'Start',c:'var(--muted)'}]),hint:'Ta ett steg om gangen. → og ← endrer x, ↑ og ↓ endrer y.',why:`Fra (${sx}, ${sy}) gir ${moves.join(' ')} sluttpunktet (${x}, ${y}).`}}
+  if(Math.random()<.5){const s=rnd(0,20),k=rnd(2,6),a=rnd(2,9);return N(`Programmet starter med tallet ${s}.<br><b>Gjenta ${k} ganger: legg til ${a}.</b><br>Hvilket tall har programmet til slutt?`,s+k*a,{hint:`Det er det samme som ${s} + ${k} · ${a}.`,why:`${k} · ${a} = ${k*a}. ${s} + ${k*a} = ${s+k*a}.`})}
+  const k=rnd(2,3),a=rnd(1,2),b=rnd(1,2);return {q:`Roboten starter i (0, 0).<br><b>Gjenta ${k} ganger: gå ${a} høyre og ${b} opp.</b><br>Hvor havner den?`,a:[k*a,k*b],kind:'coord',show:`(${k*a}, ${k*b})`,hint:'Hver runde: x øker med '+a+' og y med '+b+'.',why:`x: ${k} · ${a} = ${k*a}. y: ${k} · ${b} = ${k*b}.`}}});
+
+unit({id:'t5-deling',c:'t5',icon:'➗',title:'Dele større tall',
+ cards:[
+  {h:'Del opp tallet',t:`<p><b>84 : 4</b>: Del 84 i biter som er lette å dele: 80 og 4.</p><p>80 : 4 = 20 og 4 : 4 = 1. Til sammen <b>21</b>.</p><p>Tenk: 84 kjeks på 4 venner. Først 80 kjeks (20 hver), så 4 til (1 hver).</p>`},
+  {h:'Velg smarte biter',t:`<p><b>156 : 6</b>: 120 kan deles på 6 (= 20). Da er det 36 igjen, og 36 : 6 = 6. Svar: 20 + 6 = <b>26</b>.</p>${tr('Finn en stor bit du kan dele lett (10-gangen!), så tar du resten etterpå. Sjekk med gange: 26 · 6 = 156 ✔')}`}
+ ],
+ gen(l){const b=rnd(2,l===1?5:9);const q=l===1?rnd(1,9)*10:l===2?rnd(11,29):rnd(21,Math.floor(999/b));const a=b*q;const big=Math.floor(q/10)*10*b,rest=a-big;
+  return N(`${a} : ${b} = ?`,q,{fact:q<=10?[b,q]:null,hint:l===1?`Regn ${a/10} : ${b}, og heng på en null.`:`Del opp: ${big} : ${b} og ${rest} : ${b}.`,why:l===1?`${a/10} : ${b} = ${q/10}, så ${a} : ${b} = ${q}.`:`${big} : ${b} = ${big/b} og ${rest} : ${b} = ${rest/b}. ${big/b} + ${rest/b} = ${q}. Sjekk: ${q} · ${b} = ${a}.`})}});
+
+unit({id:'t5-blandet',c:'t5',icon:'🥧',title:'Blandede tall og uekte brøk',
+ cards:[
+  {h:'Mer enn én hel',t:`<p>Du har 7 pizzabiter, og hver pizza har 4 biter. Det er ${frac(7,4)} pizza. En slik brøk, der telleren er større enn nevneren, kalles <b>uekte brøk</b>.</p>`,v:V.pie(4,4)+' '+V.pie(3,4)},
+  {h:'Blandet tall',t:`<p>4 biter blir én hel pizza. 7 biter = 1 hel og 3 biter igjen. Vi skriver <b>1 ${frac(3,4)}</b>, et <b>blandet tall</b>.</p>${tr('Uekte → blandet: del teller på nevner. Svaret er de hele, resten er telleren.')}`},
+  {h:'Tilbake igjen',t:`<p>2 ${frac(1,3)} som uekte brøk: 2 hele = ${frac(6,3)}, pluss ${frac(1,3)} = ${frac(7,3)}.</p><p>Regel: hele · nevner + teller.</p>`}
+ ],
+ gen(l){const d=pick([2,3,4,5,6,8]),w=rnd(1,l===3?4:2),n=rnd(1,d-1),T2=w*d+n;
+  if(l===1)return N(`Hvor mange ${d===2?'halve':d===4?'fjerdedeler':d+'-deler'} er det i ${w} ${n}/${d}?`,T2,{vis:Array.from({length:w},()=>V.pie(d,d)).join(' ')+' '+V.pie(n,d),hint:`Hver hel har ${d} biter.`,why:`${w} · ${d} = ${w*d}, pluss ${n} = ${T2}.`});
+  if(l===2)return {q:`Skriv ${T2}/${d} som blandet tall.`,a:[w,n,d],kind:'mixed',show:`${w} ${n}/${d}`,hint:`Hvor mange ganger går ${d} opp i ${T2}?`,why:`${T2} : ${d} = ${w} rest ${n}. Altså ${w} hele og ${n}/${d}.`};
+  return F(`Skriv ${w} ${n}/${d} som uekte brøk.`,T2,d,{exact:true,hint:'Hele · nevner + teller.',why:`${w} · ${d} + ${n} = ${T2}. Svar: ${T2}/${d}.`})}});
+
+unit({id:'t6-desgange',c:'t6',icon:'🧃',title:'Gange og dele desimaltall',
+ cards:[
+  {h:'Tideler ganger',t:`<p><b>0,4 · 3</b>: Tenk «4 tideler, tre ganger» = 12 tideler. 12 tideler er <b>1,2</b>.</p>`,v:V.numline(0,1.4,{step:.1,label:.5,jumps:[[0,.4,''],[.4,.8,''],[.8,1.2,'']],marks:[{v:1.2,l:'1,2'}]})},
+  {h:'Regn uten komma, sett det inn igjen',t:`<p>3 brus til <b>12,50 kr</b>: 1250 · 3 = 3750. Det var 2 siffer etter kommaet, så svaret får 2 også: <b>37,50 kr</b>.</p>${tr('Tell sifrene etter kommaet i oppgaven. Like mange skal det være i svaret.')}`},
+  {h:'Dele et desimaltall',t:`<p><b>4,8 : 2</b>: 48 tideler delt på 2 = 24 tideler = <b>2,4</b>. Kommaet blir stående på samme plass.</p>`}
+ ],
+ gen(l){if(l===1){const k=rnd(1,9),n=rnd(2,9);return N(`0,${k} · ${n} = ?`,+(k*n/10).toFixed(1),{hint:`${k} tideler, ${n} ganger.`,why:`${k} · ${n} = ${k*n} tideler = ${fmt(k*n/10)}.`})}
+  if(l===2){if(Math.random()<.5){const x=rnd(11,99)/10,n=rnd(2,6);return N(`${fmt(x)} · ${n} = ?`,+(x*n).toFixed(1),{hint:'Regn uten komma, og sett det inn igjen.',why:`${Math.round(x*10)} · ${n} = ${Math.round(x*10)*n}. Ett siffer etter kommaet: ${fmt(+(x*n).toFixed(1))}.`})}const n=rnd(2,6),q=rnd(11,49)/10;const x=+(q*n).toFixed(1);return N(`${fmt(x)} : ${n} = ?`,q,{hint:'Regn i tideler.',why:`${Math.round(x*10)} tideler : ${n} = ${Math.round(q*10)} tideler = ${fmt(q)}.`})}
+  const p=rnd(5,40)+pick([0,.5,.9,.25,.75]),n=rnd(2,6);return N(`Du kjøper ${n} ${pick(['brus','pizzastykker','pakker tyggis','is'])} til ${p.toFixed(2).replace('.',',')} kr per stykk. Hva blir prisen?`,+(p*n).toFixed(2),{hint:'Regn uten komma, og sett inn kommaet med to siffer bak.',why:`${p.toFixed(2).replace('.',',')} · ${n} = ${(p*n).toFixed(2).replace('.',',')} kr.`})}});
+
+unit({id:'t6-uttrykk',c:'t6',icon:'🔣',title:'Uttrykk og formler',
+ cards:[
+  {h:'Bokstaver er tall i forkledning',t:`<p>I algebra står en bokstav for et tall. <b>3x</b> betyr 3 · x. Er x = 4, så er 3x = 12.</p><p>Sett inn tallet, og regn ut: 3x + 2 = 3 · 4 + 2 = <b>14</b>.</p>`},
+  {h:'Formler for mønstre',t:`<p>Du bygger rekker av firkanter med pinner. Figur 1 bruker 4 pinner, figur 2 bruker 7, figur 3 bruker 10. Hver ny figur trenger 3 pinner til.</p><p>Formelen er <b>3n + 1</b>, der n er figurnummeret. Figur 10: 3 · 10 + 1 = 31 pinner.</p>${tr('Formelen sparer deg for å tegne figur 100!')}`}
+ ],
+ gen(l){const x=rnd(2,10);if(l===1){const b=rnd(1,20);return Math.random()<.5?N(`x = ${x}. Hva er x + ${b}?`,x+b,{why:`${x} + ${b} = ${x+b}.`}):N(`x = ${x}. Hva er 2x?`,2*x,{why:`2x = 2 · ${x} = ${2*x}.`})}
+  if(l===2){const a=rnd(2,9),b=rnd(1,15);return N(`x = ${x}. Hva er ${a}x + ${b}?`,a*x+b,{fact:[a,x],hint:'Gang først, så pluss.',why:`${a} · ${x} = ${a*x}. ${a*x} + ${b} = ${a*x+b}.`})}
+  if(Math.random()<.5){const a=rnd(2,5),b=rnd(0,4),n=pick([10,12,20,25]);return N(`Figur n i et mønster har ${a}n${b?' + '+b:''} blokker. Hvor mange blokker har figur ${n}?`,a*n+b,{why:`${a} · ${n}${b?' + '+b:''} = ${a*n+b}.`})}
+  const a=rnd(2,6),b=rnd(1,6);return N(`x = ${x}. Hva er ${a}(x + ${b})?`,a*(x+b),{hint:'Parentesen først.',why:`${x} + ${b} = ${x+b}. ${a} · ${x+b} = ${a*(x+b)}.`})}});
+
+unit({id:'t6-trekant',c:'t6',icon:'⛺',title:'Areal av trekant og parallellogram',
+ cards:[
+  {h:'Parallellogram = skjevt rektangel',t:`<p>Klipp av trekanten på den ene siden og flytt den over til den andre. Da blir parallellogrammet et rektangel!</p><p>Areal = <b>grunnlinje · høyde</b>. Høyden er den stiplede linja, rett opp.</p>`,v:V.para(6,4)},
+  {h:'Trekant = halvt rektangel',t:`<p>En trekant er akkurat halvparten av et rektangel (eller parallellogram) med samme grunnlinje og høyde. Tenk på et telt eller et tak i Minecraft.</p><p>Areal = <b>g · h : 2</b>.</p>${tr('Bruk alltid høyden som står rett (90°) på grunnlinja, ikke den skrå siden.')}`,v:V.tri(6,4)}
+ ],
+ gen(l){const g=rnd(2,12),h=rnd(2,10);
+  if(l===1||(l===3&&Math.random()<.4))return N('Hva er arealet av parallellogrammet (cm²)?',g*h,{vis:V.para(g,h),hint:'Grunnlinje · høyde.',why:`${g} · ${h} = ${g*h} cm².`});
+  const gg=g%2&&h%2?g+1:g;return N('Hva er arealet av trekanten (cm²)?',gg*h/2,{vis:V.tri(gg,h),hint:'Grunnlinje · høyde, delt på 2.',why:`${gg} · ${h} = ${gg*h}. Halvparten er ${gg*h/2} cm².`})}});
+
+/* ============ state ============ */
+const LS='mattekraft-v1',LSC='mattekraft-cfg-v1';
+const blank=()=>({xp:0,gems:0,owned:['gress','ingen'],skin:'gress',hat:'ingen',today:{d:'',xp:0},mission:'',units:{},trophies:{},streak:{n:0,last:''},stats:{lessons:0,correct:0,wrong:0,best:0,fixed:0,asked:0,sprintBest:0,perfect:0,missions:0,bought:0},facts:{},updatedAt:0,sound:true});
+const GOAL=40;
+function addXP(n){S.xp+=n;const t=todayStr();if(S.today.d!==t)S.today={d:t,xp:0};S.today.xp+=n}
+const todayXP=()=>S.today&&S.today.d===todayStr()?S.today.xp:0;
+let S=blank(),CFG={pin:'',prizes:{},paid:{}};
+const hydrate=s=>{const b=blank();const o=Object.assign(b,s);o.stats=Object.assign(blank().stats,s.stats||{});o.today=s.today||{d:'',xp:0};o.owned=s.owned||['gress','ingen'];return o};
+try{const s=JSON.parse(localStorage.getItem(LS)||'null');if(s)S=hydrate(s)}catch(e){}
+try{const c=JSON.parse(localStorage.getItem(LSC)||'null');if(c)CFG=Object.assign(CFG,c)}catch(e){}
+let canImg=false,pendingImg=null;
+let db=null,user=null,progRef=null,cfgRef=null,canCfg=true,writeChain=Promise.resolve(),saveTimer=null,sample=null,tts=null;
+const IN_CLAUDE=!!(window.claude&&window.claude.use);
+if(!IN_CLAUDE&&'speechSynthesis' in window){tts={speak(t){return new Promise(res=>{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='nb-NO';const v=speechSynthesis.getVoices().find(v=>/^(nb|no|nn)/i.test(v.lang));if(v)u.voice=v;u.rate=.95;u.onend=res;u.onerror=res;speechSynthesis.speak(u)})},stop(){speechSynthesis.cancel()}}}
+function save(){S.updatedAt=Date.now();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}
+  if(progRef){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{const body=JSON.parse(JSON.stringify(S));writeChain=writeChain.then(()=>progRef.set(body)).catch(()=>{})},800)}}
+async function saveCfg(){try{localStorage.setItem(LSC,JSON.stringify(CFG))}catch(e){}
+  if(cfgRef){try{await cfgRef.set(JSON.parse(JSON.stringify(CFG)));return true}catch(e){canCfg=false;toast('Bare eieren av appen kan lagre premier på nettet. Lagret på denne enheten.');return false}}return true}
+(async()=>{if(!window.claude||!window.claude.use)return;
+  try{[sample,tts]=await Promise.all([claude.use('sample'),claude.use('tts')]);if(sample){try{const lim=await sample.limits();canImg=!!(lim&&lim.images)}catch(e){}}render()}catch(e){}
+  try{db=await claude.use('db');user=await claude.use('user');if(!db)return;
+    cfgRef=db.doc('config/prize');cfgRef.onSnapshot(s=>{if(s.exists){CFG=Object.assign({pin:'',prizes:{},paid:{}},JSON.parse(JSON.stringify(s.data())));try{localStorage.setItem(LSC,JSON.stringify(CFG))}catch(e){}render()}},()=>{});
+    const uid=user?await user.id():null;if(!uid)return;progRef=db.doc('data/users/'+uid+'/progress');
+    const snap=await progRef.get();if(snap.exists){const d=JSON.parse(JSON.stringify(snap.data()));if((d.updatedAt||0)>=(S.updatedAt||0)){S=hydrate(d);try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}render()}else save()}else if(S.updatedAt)save();
+  }catch(e){}})();
+
+/* ============ gamification ============ */
+const crowns=id=>(S.units[id]&&S.units[id].crowns)||0;
+const courseUnits=c=>U.filter(u=>u.c===c);
+const courseCrowns=c=>courseUnits(c).reduce((s,u)=>s+crowns(u.id),0);
+const courseDone=c=>courseUnits(c).every(u=>crowns(u.id)>=3);
+const totalCrowns=()=>U.reduce((s,u)=>s+crowns(u.id),0);
+function factLevel(a,b){const f=S.facts[Math.min(a,b)+'x'+Math.max(a,b)];if(!f)return 0;if(f.c>=4&&f.c>f.w*2)return 4;if(f.c>=2&&f.c>f.w)return 3;if(f.c>=1)return 2;return 1}
+const factsKnown=()=>{let k=0;for(let a=1;a<=10;a++)for(let b=1;b<=10;b++)if(factLevel(a,b)>=3)k++;return k};
+const TROPHIES=[
+ {id:'first',ic:'🧱',n:'Første blokk',d:'Fullfør din første leksjon',t:()=>S.stats.lessons>=1},
+ {id:'perfect',ic:'💎',n:'Feilfri',d:'En hel leksjon uten feil',t:()=>S.stats.perfect>=1},
+ {id:'perfect5',ic:'👑',n:'Diamantkonge',d:'5 feilfrie leksjoner',t:()=>S.stats.perfect>=5},
+ {id:'combo10',ic:'🔥',n:'I flytsonen',d:'10 riktige på rad',t:()=>S.stats.best>=10},
+ {id:'combo25',ic:'☄️',n:'Ustoppelig',d:'25 riktige på rad',t:()=>S.stats.best>=25},
+ {id:'fixed10',ic:'🛠️',n:'Gir aldri opp',d:'Rett opp 10 feil i en leksjon',t:()=>S.stats.fixed>=10},
+ {id:'streak3',ic:'📅',n:'Tre dager',d:'Øv 3 dager på rad',t:()=>S.streak.n>=3},
+ {id:'streak7',ic:'🏅',n:'Ukeskriger',d:'Øv 7 dager på rad',t:()=>S.streak.n>=7},
+ {id:'xp100',ic:'⚡',n:'100 XP',d:'Samle 100 XP',t:()=>S.xp>=100},
+ {id:'xp500',ic:'🚀',n:'500 XP',d:'Samle 500 XP',t:()=>S.xp>=500},
+ {id:'xp2000',ic:'🌟',n:'2000 XP',d:'Samle 2000 XP',t:()=>S.xp>=2000},
+ {id:'sprint15',ic:'🏎️',n:'Turbo',d:'15 riktige i en lynrunde',t:()=>S.stats.sprintBest>=15},
+ {id:'sprint30',ic:'🏁',n:'Formel 1',d:'30 riktige i en lynrunde',t:()=>S.stats.sprintBest>=30},
+ {id:'facts50',ic:'🗺️',n:'Halve kartet',d:'50 gangefakta grønne',t:()=>factsKnown()>=50},
+ {id:'facts100',ic:'🏆',n:'Gangemester',d:'Hele gangetabell-kartet grønt',t:()=>factsKnown()>=100},
+ {id:'brok',ic:'🍕',n:'Pizzaprofessor',d:'3 kroner i alle brøk-temaer',t:()=>['t4-brok','t5-likebrok','t6-brokregn','t6-brokav'].every(i=>crowns(i)>=3)},
+ {id:'desimal',ic:'🔢',n:'Kommakaptein',d:'3 kroner i alle desimal-temaer',t:()=>['t4-desimal','t5-desimal','t5-desregn','t6-ti'].every(i=>crowns(i)>=3)},
+ {id:'asker',ic:'💬',n:'Nysgjerrig',d:'Still Kubo et spørsmål',t:()=>S.stats.asked>=1},
+ {id:'photo1',ic:'📸',n:'Leksedetektiv',d:'La Kubo rette et bilde av regnestykker',t:()=>(S.stats.photos||0)>=1},
+ {id:'mission1',ic:'🎯',n:'Oppdrag utført',d:'Fullfør Dagens oppdrag',t:()=>S.stats.missions>=1},
+ {id:'mission10',ic:'🦸',n:'Oppdragshelt',d:'Fullfør 10 dagsoppdrag',t:()=>S.stats.missions>=10},
+ {id:'goal',ic:'🎖️',n:'Dagens mål',d:`Nå dagsmålet på ${GOAL} XP`,t:()=>todayXP()>=GOAL},
+ {id:'shop1',ic:'🛍️',n:'Stilikon',d:'Kjøp noe til Kubo i butikken',t:()=>S.stats.bought>=1},
+ {id:'gems500',ic:'💠',n:'Diamantgruve',d:'Tjen 500 diamanter totalt',t:()=>(S.stats.gemsTotal||0)>=500},
+ ...COURSES.map(c=>({id:'course-'+c.id,ic:'🎓',n:c.label+' ferdig',d:'3 kroner i alle temaer på '+c.label,t:()=>courseDone(c.id)}))
+];
+function addGems(n){S.gems=(S.gems||0)+n;S.stats.gemsTotal=(S.stats.gemsTotal||0)+n}
+function checkTrophies(){const nw=[];TROPHIES.forEach(t=>{if(!S.trophies[t.id]&&t.t()){S.trophies[t.id]=todayStr();nw.push(t)}});return nw}
+function bumpStreak(){const t=todayStr(),y=todayStr(new Date(Date.now()-864e5));if(S.streak.last===t)return;S.streak.n=S.streak.last===y?S.streak.n+1:1;S.streak.last=t}
+const PRAISE=['Rått! 💎','Diamant-svar!','Full gass! 🏎️','Perfekt landing! 🤸','Nam, den satt! 🍕','Creeper-sikker!','Turbo-hjerne!','Pang, rett i blinken!','Sånn gjør proffene!','Du knuste den!','Gull! 🥇','Hjernen din er på beast mode!'];
+const COMFORT=['Nesten! Feil er sånn hjernen bygger nye blokker.','Ingen fare – den kommer igjen, og da tar du den.','Godt forsøk! Se forklaringen.','Selv proffe turnere faller. Opp igjen!','Det var en vanskelig en. Les forklaringen, så knekker du den neste gang.'];
+const END=['Leksjon fullført! Du bygger matte-muskler.','Wow! Du jobbet som en maskin.','Sterkt! Hver leksjon gjør deg skarpere.','Bra jobba! Kubo er stolt av deg.'];
+
+/* sound */
+let AC=null;function beep(ok){if(!S.sound)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const notes=ok?[660,880]:[220,170];notes.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=ok?'triangle':'square';o.frequency.value=f;g.gain.setValueAtTime(.0001,AC.currentTime+i*.09);g.gain.exponentialRampToValueAtTime(ok?.15:.06,AC.currentTime+i*.09+.01);g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+i*.09+.16);o.connect(g).connect(AC.destination);o.start(AC.currentTime+i*.09);o.stop(AC.currentTime+i*.09+.18)})}catch(e){}}
+/* confetti */
+function confetti(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const cv=$('#confetti');cv.hidden=false;const ctx=cv.getContext('2d');cv.width=innerWidth;cv.height=innerHeight;const cols=['#3FA34D','#F2B705','#3E9FDB','#E5484D','#8B5A2B','#6CCB5F'];
+  const P=Array.from({length:140},()=>({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*.5,s:6+Math.random()*8,vx:-2+Math.random()*4,vy:2+Math.random()*4,c:pick(cols),r:Math.random()*6}));let f=0;
+  (function loop(){ctx.clearRect(0,0,cv.width,cv.height);P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.05;p.r+=.1;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s);ctx.restore()});if(++f<170)requestAnimationFrame(loop);else{cv.hidden=true}})()}
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),3200)}
+
+/* ============ Kubo (Claude) ============ */
+const RULES=`Du er Kubo, en blid og morsom matte-kompis (en liten kube-robot) i appen Mattekraft. Du hjelper en gutt på 11 år (6. trinn) som synes matte er vanskelig, særlig gangetabellen, desimaltall og brøk. Svar alltid på norsk bokmål.
+Slik forklarer du:
+- Kort og konkret, som en flink og tålmodig privatlærer. Ett steg om gangen, korte setninger.
+- Bruk eksempler fra Minecraft, biler, turn, mat og gaming når det passer.
+- Vis utregning steg for steg på egne linjer. Du kan tegne enkle figurer med tegn, f.eks. ■■■□.
+- Gi et triks eller en huskeregel når det finnes.
+- Spør han om svaret på en oppgave: gi først et hint og et hjelpespørsmål. Står han fortsatt fast, forklar hele veien til svaret.
+- Ros innsatsen. Si aldri at noe er «lett» eller «enkelt».
+- Avslutt gjerne med en liten kontrolloppgave han kan prøve.
+- Maks ca. 150 ord. Ingen overskrifter. Bruk **fet** skrift sparsomt.
+- Handler spørsmålet ikke om matte, svar vennlig og kort og led tilbake til matte.`;
+const PHOTO_RULES=`Han har tatt et bilde av regnestykker (ofte håndskrevne lekser eller oppgaver fra boka). Gjør dette, og bruk gjerne opptil 300 ord her:
+1. Les hvert regnestykke på bildet. Skriv oppgaven på én linje, så svaret hans, og sett ✅ hvis riktig eller ❌ hvis feil.
+2. Ved ❌: si vennlig nøyaktig hvor det gikk galt (f.eks. glemt mente, komma på feil plass, la sammen nevnerne). Vis så riktig løsning steg for steg på egne linjer: «Steg 1: …», «Steg 2: …», og riktig svar til slutt.
+3. Ved ✅: gi kort ros og gjerne et smart triks eller en snarvei.
+4. Står det en oppgave uten svar: forklar metoden steg for steg med «Steg 1: …» osv. La ham gjerne prøve det siste steget selv, men skriv svaret nederst så han kan sjekke.
+5. Er noe uleselig eller uskarpt, si hva du ikke ser, og be om et nytt bilde tatt rett ovenfra i godt lys.
+6. Er det mange oppgaver, ta de 5 første og si at han kan sende resten etterpå.
+7. Avslutt med «Du fikk X av Y riktig!» (hvis det var svar å rette) og én lignende oppgave han kan øve på.
+Ikke finn på tall du ikke ser på bildet.`;
+const md=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+const sampleErr=c=>({not_granted:'Kubo har ikke fått lov til å svare. En voksen kan slå det på i Claude.',sampling_disabled:'Kubo er ikke tilgjengelig på denne kontoen.',rate_limited:'Kubo trenger en liten pause. Prøv igjen om litt.',session_expired:'Du må logge inn på nytt.',refused:'Kubo kunne ikke svare på det. Prøv å spørre på en annen måte.',image_rejected:'Bildet var for stort eller i feil format. Prøv å ta et nytt bilde.',images_unavailable:'Kubo kan ikke se bilder akkurat her. Prøv å skrive regnestykket i stedet.'}[c]||'Noe gikk galt. Prøv igjen.');
+async function askKubo(prompt,el,opts={}){if(!sample){el.innerHTML='Kubo er bare tilgjengelig når appen er åpnet i Claude.';return}
+  el.innerHTML='<i>Kubo tenker …</i>';try{const r=await sample(Array.isArray(prompt)?prompt:RULES+'\n\n'+prompt,{cache:false,onText:({text})=>{el.innerHTML=md(text)},...opts});el.innerHTML=md(r.text);S.stats.asked++;const nw=checkTrophies();save();nw.forEach(t=>toast('Ny pokal: '+t.n+' '+t.ic));return r.text}catch(e){if(e.code==='cancelled'){el.innerHTML=e.text?md(e.text):'Stoppet.';return}el.innerHTML=(e.text?md(e.text)+'<br>':'')+'<span class="muted">'+sampleErr(e.code)+'</span>'}}
+function speak(text,btn){if(!tts)return;tts.speak(strip(text).slice(0,1900)).catch(()=>{})}
+
+/* ============ rendering ============ */
+let tab='kurs',course='t6',parentOpen=false,chat=[],chatCtl=null;
+try{course=localStorage.getItem('mk-course')||'t6'}catch(e){}
+const NAV=[['kurs','🗺️','Kurs'],['lyn','⚡','Lynrunde'],['pokal','🏆','Pokaler'],IN_CLAUDE?['spor','💬','Spør Kubo']:['spor','📖','Mattebok'],['voksen','🔒','Voksne']];
+function render(){
+  $('#brand').innerHTML=KUBO(34)+'<span>Mattekraft</span>';
+  $('#stats').innerHTML=`<div class="stat" title="Dager på rad">🔥 ${S.streak.n}</div><div class="stat" title="XP">⚡ ${S.xp}</div><div class="stat" title="Diamanter">💎 ${S.gems||0}</div><div class="stat" title="Kroner">👑 ${totalCrowns()}</div><div class="stat" title="Pokaler">🏆 ${Object.keys(S.trophies).length}</div>`;
+  $('#nav').innerHTML=NAV.map(([id,ic,l])=>`<button data-tab="${id}" ${tab===id?'aria-current="page"':''}><span class="ic">${ic}</span>${l}</button>`).join('');
+  const m=$('#main');m.innerHTML=({kurs:viewKurs,lyn:viewLyn,pokal:viewPokal,spor:viewSpor,voksen:viewVoksen}[tab])();
+  if(tab==='spor')scrollChat();
+}
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(!b)return;tab=b.dataset.tab;render();scrollTo({top:0})});
+
+function prizeBox(c){const p=CFG.prizes[c.id];const have=courseCrowns(c.id),max=courseUnits(c.id).length*3;const done=courseDone(c.id),paid=CFG.paid[c.id];
+  if(!p)return `<div class="prize"><div class="chest">🎁</div><div style="flex:1;min-width:0"><b>Ingen premie lagt inn ennå</b><span class="note">En voksen kan legge inn en premie under «Voksne».</span><div class="meter"><i style="width:${have/max*100}%"></i></div><span class="note">${have} av ${max} kroner</span></div></div>`;
+  return `<div class="prize" ${done&&!paid?'style="border-style:solid;background:var(--surface-2)"':''}><div class="chest">${paid?'✅':done?'🎉':'🎁'}</div><div style="flex:1;min-width:0"><b>${done?(paid?'Premie utbetalt: ':'Premien er låst opp! '):'Premie: '}${esc(p)}</b>${done&&!paid?'<span class="note">Vis dette til en voksen!</span>':`<span class="note">Få 3 kroner i alle temaene på ${c.label}.</span>`}<div class="meter"><i style="width:${have/max*100}%"></i></div><span class="note">${have} av ${max} kroner</span></div></div>`}
+function ring(p){const r=26,c=2*Math.PI*r;return `<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true" style="flex:none"><circle cx="32" cy="32" r="${r}" style="fill:none;stroke:var(--line);stroke-width:8"/><circle cx="32" cy="32" r="${r}" transform="rotate(-90 32 32)" style="fill:none;stroke:${p>=1?'var(--gold)':'var(--grass)'};stroke-width:8;stroke-linecap:round;stroke-dasharray:${(Math.min(1,p)*c).toFixed(1)} ${c.toFixed(1)}"/><text x="32" y="38" text-anchor="middle" style="fill:var(--ink);font:900 16px var(--f-body)">${p>=1?'✓':Math.round(p*100)+'%'}</text></svg>`}
+function dailyPanel(){const x=todayXP(),done=S.mission===todayStr();
+  return `<div class="card daily"><div class="row" style="flex-wrap:nowrap">${ring(x/GOAL)}<div style="flex:1;min-width:0"><b>Dagens mål: ${GOAL} XP</b><div class="note">${x>=GOAL?'Nådd! Streaken er trygg i dag 🔥':`${x} av ${GOAL} XP · ca. ${Math.max(1,Math.ceil((GOAL-x)/22))} leksjon${Math.ceil((GOAL-x)/22)>1?'er':''} igjen`}</div></div></div>
+   <button class="btn ${done?'ghost':'sky'} block" id="missionBtn">${done?'🎯 Ta et ekstra oppdrag':'🎯 Start Dagens oppdrag (+20 XP bonus)'}</button>${canImg?'<button class="btn ghost block" id="photoGo">📸 Få leksene rettet av Kubo</button>':''}</div>`}
+document.addEventListener('click',e=>{if(e.target.closest('#missionBtn')){closeLayer();startMission()}});
+function viewKurs(){const c=COURSES.find(x=>x.id===course)||COURSES[4];const us=courseUnits(c.id);const off=[0,55,85,55,0,-55,-85,-55];
+  return dailyPanel()+`<div class="courses" role="tablist">${COURSES.map(x=>`<button class="chip" data-course="${x.id}" aria-pressed="${x.id===c.id}">${x.label}${courseDone(x.id)?' ✓':''}</button>`).join('')}</div>
+  <div class="course-head"><div><h2>${c.label}</h2><p>${c.sub}</p></div>${KUBO(56)}</div>${prizeBox(c)}
+  <div class="path">${us.map((u,i)=>{const k=crowns(u.id);return `<div class="node-wrap" style="transform:translateX(${off[i%8]}px)"><button class="node ${k>=3?'done':k>0?'started':''}" data-unit="${u.id}" aria-label="${esc(u.title)}, ${k} av 3 kroner"><span>${u.icon}</span></button><div class="crowns">${[0,1,2].map(j=>`<i class="${j<k?'on':''}"></i>`).join('')}</div><div class="node-label">${u.title}</div></div>`}).join('')}</div>
+  <p class="center note">Tips: Start med det som er vanskelig. Gangetabellen ligger under 3. trinn.</p>`}
+document.addEventListener('click',e=>{const cb=e.target.closest('[data-course]');if(cb){course=cb.dataset.course;try{localStorage.setItem('mk-course',course)}catch(_){}render();return}
+  const ub=e.target.closest('[data-unit]');if(ub){openUnit(ub.dataset.unit)}});
+
+function closeLayer(){$('#layer').innerHTML='';if(tts)try{tts.stop()}catch(e){}}
+function openUnit(id){const u=U.find(x=>x.id===id),k=crowns(id);const next=Math.min(3,k+1);
+  $('#layer').innerHTML=`<div class="overlay" data-close><div class="sheet stack" role="dialog" aria-label="${esc(u.title)}">
+   <div class="row"><div style="font-size:44px">${u.icon}</div><div style="flex:1;min-width:0"><h2 style="font-size:26px">${u.title}</h2><div class="crowns">${[0,1,2].map(j=>`<i class="${j<k?'on':''}"></i>`).join('')}</div></div><button class="x" data-close aria-label="Lukk">✕</button></div>
+   <button class="btn sky block" id="learnBtn">📖 Lær (forklaring)</button>
+   <button class="btn block" id="practiceBtn">${k>=3?'🔁 Øv igjen (nivå 3)':'▶ Øv – nivå '+next}</button>
+   <div class="row" style="justify-content:center">${[1,2,3].map(l=>`<button class="chip" data-lvl="${l}" ${l>k+1?'disabled style="opacity:.4"':''}>Nivå ${l}${l<=k?' ✓':''}</button>`).join('')}</div>
+   <p class="note center">Nivå 1 er oppvarming, nivå 3 er sjefsnivå. Hvert nivå gir en krone.</p></div></div>`;
+  $('#learnBtn').onclick=()=>openLearn(u);$('#practiceBtn').onclick=()=>startLesson(u,k>=3?3:next);
+  document.querySelectorAll('[data-lvl]').forEach(b=>b.onclick=()=>{const l=+b.dataset.lvl;if(l<=k+1)startLesson(u,l)});}
+$('#layer').addEventListener('click',e=>{if(e.target.matches('[data-close]'))closeLayer()});
+
+/* learn */
+function openLearn(u,i=0){const c=u.cards[i],last=i===u.cards.length-1;
+  $('#layer').innerHTML=`<div class="full" role="dialog" aria-label="Lær: ${esc(u.title)}"><div class="full-head"><button class="x" data-close aria-label="Lukk">✕</button><div class="prog"><i style="width:${(i+1)/u.cards.length*100}%"></i></div></div>
+  <div class="full-body"><div class="wrap lcard"><div class="kubo-say" style="margin-bottom:10px">${KUBO(40)}<div class="note" style="align-self:center">${esc(u.title)} · ${i+1}/${u.cards.length}</div></div>
+   <h3>${c.h}</h3>${c.t}${c.v?`<div class="vis-box">${c.v}</div>`:''}
+   <div class="row">${tts?'<button class="btn ghost small" id="readBtn">🔊 Les høyt</button>':''}${sample?'<button class="btn ghost small" id="otherBtn">🤔 Forklar på en annen måte</button>':''}</div>
+   <div id="kuboOut" class="kubo-say" hidden style="margin-top:12px">${KUBO(36)}<div class="bubble" id="kuboTxt"></div></div>
+   <div class="dots">${u.cards.map((_,j)=>`<i class="${j===i?'on':''}"></i>`).join('')}</div></div></div>
+  <div class="foot"><div class="wrap"><div class="row" style="flex-wrap:nowrap">${i>0?'<button class="btn ghost" id="prevC">◀</button>':''}<button class="btn block" id="nextC">${last?'Start øving ▶':'Neste ▶'}</button></div></div></div></div>`;
+  $('#layer').querySelector('[data-close]').onclick=closeLayer;
+  if($('#prevC'))$('#prevC').onclick=()=>openLearn(u,i-1);
+  $('#nextC').onclick=()=>last?startLesson(u,Math.min(3,crowns(u.id)+1)):openLearn(u,i+1);
+  if($('#readBtn'))$('#readBtn').onclick=()=>speak(c.h+'. '+c.t);
+  if($('#otherBtn'))$('#otherBtn').onclick=()=>{$('#kuboOut').hidden=false;askKubo(`Forklar temaet «${u.title}» (kortet «${c.h}») på en ny og annerledes måte, med et eksempel fra ${pick(['Minecraft','biler','turn','mat','fotball'])}. Han har allerede lest dette: «${strip(c.t)}»`,$('#kuboTxt'))};}
+
+/* lesson */
+let L=null;
+function makeQs(u,l,n=8){const qs=[],seen=new Set();let guard=0;while(qs.length<n&&guard++<80){const q=u.gen(l);const key=strip(q.q)+(q.vis||'').length;if(seen.has(key)&&guard<70)continue;seen.add(key);qs.push(q)}return qs}
+function missionUnit(){const started=U.filter(u=>crowns(u.id)>0);const pool=started.length?started:U.filter(u=>['t3-gange1','t3-gange2','t4-brok','t4-desimal','t5-desimal'].includes(u.id));
+  const weak=Object.entries(S.facts).filter(([k,f])=>f.w>=f.c).map(([k])=>k.split('x').map(Number));
+  return {id:'mission',c:null,icon:'🎯',title:'Dagens oppdrag',gen(){if(weak.length&&Math.random()<.35){const[a,b]=pick(weak);return N(`<span class="note">🔥 Gangestykke du øver på</span><br>${a} · ${b} = ?`,a*b,{fact:[a,b],hint:tipFor(a,b),why:whyMult(a,b)})}
+    const w=pool.map(u=>4-Math.min(3,crowns(u.id)));let r=Math.random()*w.reduce((a,b)=>a+b,0),u=pool[0];for(let i=0;i<pool.length;i++){r-=w[i];if(r<=0){u=pool[i];break}}
+    const q=u.gen(Math.max(1,Math.min(3,crowns(u.id)||1)));q.q=`<span class="note">${u.icon} ${u.title}</span><br>`+q.q;return q}}}
+function startMission(){startLesson(missionUnit(),1,10)}
+function startLesson(u,l,n=8){L={u,l,queue:makeQs(u,l,n),i:0,total:n,firstOk:0,wrongIds:new Set(),fixed:0,combo:0,mistakes:0,xp:0,state:'ask',sel:null};renderQ()}
+function renderQ(){const q=L.queue[L.i];const pct=Math.min(100,(L.firstOk+L.fixed)/L.total*100);
+  const inputHtml=q.kind==='choice'?`<div class="opts">${q.opts.map(o=>`<button class="opt" data-opt="${esc(o)}">${esc(o)}</button>`).join('')}</div>`:`<input class="answer" id="ans" autocomplete="off" inputmode="${q.kind==='num'?'decimal':'text'}" aria-label="Svar"><div class="fmt-hint">${fmtHint[q.kind]}</div>`;
+  $('#layer').innerHTML=`<div class="full" role="dialog" aria-label="Øving"><div class="full-head"><button class="x" id="quitL" aria-label="Avslutt">✕</button><div class="prog"><i style="width:${pct}%"></i></div><span class="combo">${L.combo>=3?'🔥'+L.combo:''}</span></div>
+  <div class="full-body"><div class="wrap"><div class="note">${esc(L.u.title)}${L.u.id==='mission'?'':' · nivå '+L.l}${q.retry?' · <b>prøv igjen</b>':''}</div><div class="qtext">${q.q}</div>${q.vis?`<div class="vis-box">${q.vis}</div>`:''}<div id="inp">${inputHtml}</div>
+   <div class="row" style="margin-top:12px">${q.hint?'<button class="btn ghost small" id="hintBtn">💡 Hint</button>':''}${tts?'<button class="btn ghost small" id="readQ">🔊</button>':''}</div><div id="hintTxt" class="trick" hidden>${q.hint||''}</div></div></div>
+  <div class="foot" id="foot"><div class="wrap"><button class="btn block" id="checkBtn" disabled>Sjekk</button></div></div></div>`;
+  const ans=$('#ans');const cb=$('#checkBtn');
+  if(ans){ans.focus();ans.addEventListener('input',()=>cb.disabled=!ans.value.trim());ans.addEventListener('keydown',e=>{if(e.key==='Enter'&&ans.value.trim())submit()})}
+  document.querySelectorAll('[data-opt]').forEach(b=>b.onclick=()=>{if(L.state!=='ask')return;document.querySelectorAll('[data-opt]').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');L.sel=b.dataset.opt;cb.disabled=false});
+  cb.onclick=submit;$('#quitL').onclick=()=>{closeLayer();L=null};
+  if($('#hintBtn'))$('#hintBtn').onclick=()=>{$('#hintTxt').hidden=false};
+  if($('#readQ'))$('#readQ').onclick=()=>speak(q.q);
+  L.state='ask';L.sel=null;}
+function recordFact(q,ok){if(!q.fact)return;const[a,b]=q.fact;if(a<1||b<1||a>10||b>10)return;const k=Math.min(a,b)+'x'+Math.max(a,b);const f=S.facts[k]||{c:0,w:0};ok?f.c++:f.w++;S.facts[k]=f}
+function submit(){if(L.state!=='ask')return;const q=L.queue[L.i];const given=q.kind==='choice'?L.sel:$('#ans').value;if(given==null||!String(given).trim())return;
+  const ok=check(q,given);L.state='fb';recordFact(q,ok);beep(ok);
+  if(ok){L.combo++;S.stats.correct++;if(L.combo>S.stats.best)S.stats.best=L.combo;if(q.retry){L.fixed++;S.stats.fixed=Math.max(S.stats.fixed,L.fixed)}else{L.firstOk++;addGems(1);L.gems=(L.gems||0)+1}L.xp+=q.retry?1:2}
+  else{L.combo=0;L.mistakes++;S.stats.wrong++;if(!q.retry)L.wrongIds.add(L.i);const again=L.u.gen(L.l);again.retry=true;/* re-ask same question later */const copy={...q,retry:true};L.queue.push(Math.random()<.5?copy:Object.assign(again,{retry:true}));}
+  document.querySelectorAll('[data-opt]').forEach(b=>{if(b.dataset.opt===q.a)b.classList.add('right');else if(b.dataset.opt===given&&!ok)b.classList.add('wrong')});
+  if(!ok&&$('#ans'))$('#ans').classList.add('shake');
+  const foot=$('#foot');foot.className='foot '+(ok?'ok':'bad');
+  foot.innerHTML=`<div class="wrap"><div class="fb-title">${ok?pick(PRAISE):'Riktig svar: '+esc(showAns(q))}</div>${ok?(L.combo>=3&&L.combo%5===0?`<div class="why">🔥 ${L.combo} på rad! Du er i flytsonen!</div>`:''):`<div class="kubo-say">${KUBO(38,'sad')}<div style="min-width:0"><div class="why">${pick(COMFORT)}</div><div>${q.why||''}</div></div></div>`}
+   ${!ok&&sample?'<button class="btn ghost small" id="explainBtn">🤖 Forklar meg dette, Kubo</button><div id="exOut" class="bubble" hidden></div>':''}
+   ${ok&&q.why?`<details><summary class="note" style="cursor:pointer">Hvorfor?</summary><div>${q.why}</div></details>`:''}
+   <button class="btn ${ok?'':'red'} block" id="contBtn">Fortsett</button></div>`;
+  if($('#explainBtn'))$('#explainBtn').onclick=()=>{$('#exOut').hidden=false;$('#explainBtn').disabled=true;askKubo(`Oppgaven var: «${strip(q.q)}». Riktig svar er ${showAns(q)}. Han svarte «${given}». Forklar vennlig hvorfor svaret er ${showAns(q)}, og hva han kanskje tenkte feil. Bruk et eksempel han kjenner igjen.`,$('#exOut'))};
+  const cont=$('#contBtn');cont.focus();cont.onclick=next;save();}
+function next(){if(L.i+1>=L.queue.length||L.i+1>=L.total+6){return finish()}L.i++;renderQ()}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&L&&L.state==='fb'&&$('#contBtn')&&document.activeElement!==$('#contBtn')){e.preventDefault();next()}});
+function finish(){const perfect=L.mistakes===0;const isM=L.u.id==='mission';const firstM=isM&&S.mission!==todayStr();const goalBefore=todayXP()>=GOAL;
+  const bonus=10+(perfect?10:0)+(firstM?20:0);L.xp+=bonus;addXP(L.xp);const g=5+(perfect?5:0)+(firstM?15:0);addGems(g);L.gems=(L.gems||0)+g;S.stats.lessons++;if(perfect)S.stats.perfect++;
+  let crownNew=false,cDone=false;if(isM){if(firstM){S.mission=todayStr();S.stats.missions++}}
+  else{const u=S.units[L.u.id]||{crowns:0};const before=u.crowns;u.crowns=Math.max(u.crowns,L.l);S.units[L.u.id]=u;crownNew=u.crowns>before;cDone=courseDone(L.u.c)&&crownNew&&COURSES.find(c=>c.id===L.u.c)}
+  bumpStreak();const nw=checkTrophies();save();const goalNow=!goalBefore&&todayXP()>=GOAL;
+  $('#layer').innerHTML=`<div class="full" role="dialog" aria-label="Leksjon fullført"><div class="full-body"><div class="wrap stack center" style="padding-top:30px">
+   <div class="end-ic">${perfect?'💎':crownNew?'👑':'⭐'}</div><h2 style="font-size:32px">${perfect?'Feilfritt!':pick(END)}</h2>
+   ${goalNow?`<div class="card" style="border-color:var(--grass)"><b>🎖️ Dagens mål er nådd!</b> Streaken din er trygg i dag.</div>`:''}
+   ${firstM?`<div class="card" style="border-color:var(--sky)"><b>🎯 Dagens oppdrag fullført!</b> +20 XP og +15 💎 i bonus.</div>`:''}
+   <div class="row" style="justify-content:center"><div class="stat">⚡ +${L.xp} XP</div><div class="stat">💎 +${L.gems||0}</div><div class="stat">🎯 ${Math.round(L.firstOk/L.total*100)} %</div>${crownNew?`<div class="stat">👑 Krone ${L.l}</div>`:''}<div class="stat">🔥 ${S.streak.n} dag${S.streak.n===1?'':'er'}</div></div>
+   ${L.fixed?`<p class="why">Du rettet opp ${L.fixed} feil underveis. Det er sånn man blir god!</p>`:''}
+   ${cDone?`<div class="card" style="border-color:var(--gold)"><div style="font-size:48px">🎓</div><b>Du har fullført hele ${cDone.label}!</b>${CFG.prizes[cDone.id]?`<p>Premien din er låst opp: <b>${esc(CFG.prizes[cDone.id])}</b>. Vis dette til en voksen!</p>`:''}</div>`:''}
+   ${nw.length?`<h3>Nye pokaler!</h3><div class="tgrid">${nw.map(t=>`<div class="trophy"><div class="t-ic">${t.ic}</div><b>${t.n}</b><small>${t.d}</small></div>`).join('')}</div>`:''}
+   <div class="kubo-say" style="justify-content:center">${KUBO(52)}<div class="bubble" style="flex:0 1 auto">${perfect?'Helt rått! Klar for neste nivå?':crownNew&&L.l<3?'Ny krone! Neste nivå er litt tøffere.':'Fortsett sånn, så blir du sterkere for hver runde!'}</div></div>
+  </div></div><div class="foot"><div class="wrap"><button class="btn block" id="doneBtn">Fortsett</button></div></div></div>`;
+  confetti();$('#doneBtn').onclick=()=>{closeLayer();L=null;render()};$('#doneBtn').focus();}
+
+/* sprint */
+let SP=null,spSel=new Set([6,7,8,9]);
+function viewLyn(){return `<div class="stack"><div class="card stack"><h2 style="font-size:28px">⚡ Lynrunde: gangetabellen</h2><p class="muted" style="margin:0">60 sekunder. Hvor mange klarer du? Velg hvilke gangetabeller du vil øve på.</p>
+  <div class="row">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button class="chip" data-tbl="${n}" aria-pressed="${spSel.has(n)}">${n}-gangen</button>`).join('')}</div>
+  <div class="row"><button class="btn block" id="spStart" ${spSel.size?'':'disabled'}>Start lynrunde</button></div><p class="note" style="margin:0">Rekord: <b>${S.stats.sprintBest}</b> riktige. 15 gir pokalen «Turbo», 30 gir «Formel 1».</p></div></div>`}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-tbl]');if(t){const n=+t.dataset.tbl;spSel.has(n)?spSel.delete(n):spSel.add(n);render()}if(e.target.id==='spStart')startSprint()});
+function spQ(){const a=pick([...spSel]),b=rnd(1,10);return Math.random()<.5?[a,b]:[b,a]}
+function startSprint(){SP={n:0,w:0,end:Date.now()+60000,q:spQ(),timer:null};
+  $('#layer').innerHTML=`<div class="full" role="dialog" aria-label="Lynrunde"><div class="full-head"><button class="x" id="spQuit" aria-label="Avslutt">✕</button><div class="prog"><i id="spBar" style="width:100%;background:var(--sky)"></i></div></div>
+  <div class="full-body"><div class="wrap stack"><div class="big-timer" id="spT">60</div><div class="sprint-q" id="spQ"></div><input class="answer" id="spA" inputmode="numeric" autocomplete="off" aria-label="Svar"><div class="center"><span class="stat" style="display:inline-flex">✅ <span id="spN">0</span></span></div><p class="note center">Skriv svaret – det går videre av seg selv når det er riktig.</p></div></div></div>`;
+  const inp=$('#spA');const show=()=>{$('#spQ').textContent=SP.q[0]+' · '+SP.q[1];inp.value='';inp.focus()};show();
+  inp.addEventListener('input',()=>{const v=parseInt(inp.value,10),r=SP.q[0]*SP.q[1];if(v===r){SP.n++;recordFact({fact:SP.q},true);$('#spN').textContent=SP.n;beep(true);SP.q=spQ();show()}else if(String(r).length<=inp.value.length&&inp.value.length>=String(r).length&&v!==r){recordFact({fact:SP.q},false);SP.w++;inp.classList.remove('shake');void inp.offsetWidth;inp.classList.add('shake');beep(false);setTimeout(()=>{inp.value=''},250)}});
+  SP.timer=setInterval(()=>{const left=Math.max(0,SP.end-Date.now());$('#spT').textContent=Math.ceil(left/1000);$('#spBar').style.width=(left/600)+'%';if(!left)endSprint()},200);
+  $('#spQuit').onclick=()=>{clearInterval(SP.timer);SP=null;closeLayer()};}
+function endSprint(){clearInterval(SP.timer);const n=SP.n;const rec=n>S.stats.sprintBest;if(rec)S.stats.sprintBest=n;addXP(n);addGems(Math.floor(n/2));bumpStreak();const nw=checkTrophies();save();
+  $('#layer').innerHTML=`<div class="full"><div class="full-body"><div class="wrap stack center" style="padding-top:30px"><div class="end-ic">${rec?'🏁':'⚡'}</div><h2 style="font-size:32px">${n} riktige!</h2><p class="why">${rec?'NY REKORD! Du kjører fortere enn noensinne.':n>=10?'Sterk runde! Klarer du å slå rekorden på '+S.stats.sprintBest+'?':'Hver runde gjør hjernen raskere. Prøv igjen!'}</p><div class="stat" style="display:inline-flex;margin:0 auto">⚡ +${n} XP</div>
+   ${nw.length?`<div class="tgrid">${nw.map(t=>`<div class="trophy"><div class="t-ic">${t.ic}</div><b>${t.n}</b><small>${t.d}</small></div>`).join('')}</div>`:''}</div></div>
+   <div class="foot"><div class="wrap row" style="flex-wrap:nowrap"><button class="btn ghost" id="spAgain">Igjen</button><button class="btn block" id="spDone">Ferdig</button></div></div></div>`;
+  if(rec||nw.length)confetti();SP=null;$('#spAgain').onclick=startSprint;$('#spDone').onclick=()=>{closeLayer();render()};}
+
+/* trophies */
+function factGrid(){let h='<div class="h">·</div>';for(let b=1;b<=10;b++)h+=`<div class="h">${b}</div>`;for(let a=1;a<=10;a++){h+=`<div class="h">${a}</div>`;for(let b=1;b<=10;b++){const lv=factLevel(a,b);h+=`<div class="lv${lv}" title="${a} · ${b} = ${a*b}">${lv>=3?a*b:''}</div>`}}return `<div class="fgrid">${h}</div>`}
+function viewPokal(){const got=TROPHIES.filter(t=>S.trophies[t.id]).length;
+  const item=(type,id,o)=>{const own=S.owned.includes(id),on=(type==='skin'?S.skin:S.hat)===id;return `<div class="trophy"><div>${type==='skin'?KUBO(64,'happy',id,S.hat):KUBO(64,'happy',S.skin,id)}</div><b>${o.n}</b><button class="btn small ${on?'ghost':own?'sky':'gold'}" data-buy="${type}:${id}" ${on?'disabled':''} style="margin-top:6px">${on?'I bruk':own?'Bruk':'💎 '+o.p}</button></div>`};
+  return `<div class="stack"><div class="card stack"><div class="row"><h2 style="font-size:28px;flex:1">🛍️ Kubo-butikken</h2><span class="stat">💎 ${S.gems||0}</span></div><p class="muted" style="margin:0">Du tjener diamanter for hvert riktige svar, hver leksjon og hvert oppdrag. Bruk dem på farger og hatter til Kubo!</p>
+   <h3 style="font-size:18px">Farger</h3><div class="tgrid">${Object.entries(SKINS).map(([id,o])=>item('skin',id,o)).join('')}</div>
+   <h3 style="font-size:18px">Hatter</h3><div class="tgrid">${Object.entries(HATS).map(([id,o])=>item('hat',id,o)).join('')}</div></div>
+   <div class="card stack"><h2 style="font-size:28px">🏆 Pokaler <span class="muted" style="font-size:18px">${got} av ${TROPHIES.length}</span></h2>
+   <div class="tgrid">${TROPHIES.map(t=>`<div class="trophy ${S.trophies[t.id]?'':'locked'}"><div class="t-ic">${t.ic}</div><b>${t.n}</b><small>${t.d}</small></div>`).join('')}</div></div>
+   <div class="card stack"><h2 style="font-size:24px">🗺️ Gangetabell-kartet</h2><p class="muted" style="margin:0">Hver rute er et gangestykke. Den blir grønn når du har klart det flere ganger. <b>${factsKnown()} av 100</b> er grønne.</p>${factGrid()}
+   <div class="row note"><span class="lv0" style="width:14px;height:14px;border-radius:4px;display:inline-block"></span>ikke øvd <span class="lv1" style="width:14px;height:14px;border-radius:4px;display:inline-block"></span>vanskelig <span class="lv2" style="width:14px;height:14px;border-radius:4px;display:inline-block"></span>på vei <span class="lv4" style="width:14px;height:14px;border-radius:4px;display:inline-block"></span>kan den!</div></div>
+   <div class="card stack"><h2 style="font-size:24px">🎁 Premiekister</h2>${COURSES.map(c=>prizeBox(c).replace('class="prize"','class="prize" style="margin-top:0"')).join('')}</div>
+   <div class="card row"><div class="stat">📚 ${S.stats.lessons} leksjoner</div><div class="stat">✅ ${S.stats.correct} riktige</div><div class="stat">🔥 Beste rekke ${S.stats.best}</div></div></div>`}
+
+document.addEventListener('click',e=>{const b=e.target.closest('[data-buy]');if(!b)return;const[type,id]=b.dataset.buy.split(':');const o=(type==='skin'?SKINS:HATS)[id];
+  if(!S.owned.includes(id)){if((S.gems||0)<o.p){toast(`Du trenger ${o.p-(S.gems||0)} diamanter til. Ta en leksjon!`);return}S.gems-=o.p;S.owned.push(id);S.stats.bought++;confetti();toast(`Du kjøpte ${o.n}!`)}
+  if(type==='skin')S.skin=id;else S.hat=id;const nw=checkTrophies();nw.forEach(t=>toast('Ny pokal: '+t.n+' '+t.ic));save();render()});
+
+/* daily greeting from Kubo */
+const JOKES=['Hvorfor gikk brøken til legen? Den følte seg litt delt.','Hva sa nullen til åtteren? «Fint belte!»','Hvorfor er matteboka alltid lei seg? Den har så mange problemer.','Hva er en Creepers favorittfag? Eksplosjons-matte! 💥','Hvorfor tok blyanten med seg linjal på date? Den ville vise at den hadde mål.'];
+function greet(){const t=todayStr(),y=todayStr(new Date(Date.now()-864e5)),hr=new Date().getHours();const name=CFG.childName?', '+esc(CFG.childName):'';
+  const hi=hr<10?'God morgen':hr<17?'Hei':'God kveld';let head,msg,cta='Start Dagens oppdrag';
+  if(!S.stats.lessons){head=`Hei${name}! Jeg er Kubo`;msg='Jeg er matte-kompisen din. Sammen skal vi knekke gangetabellen, brøk og desimaltall – med Minecraft, biler, turn og mat. Bare 5 minutter om dagen, så blir du skikkelig god!';cta='La oss starte!'}
+  else if(S.streak.last===t&&todayXP()>=GOAL){head=`${hi}${name}! 🎖️`;msg=`Du har allerede nådd dagens mål. Rått! Vil du slå lynrunde-rekorden din på ${S.stats.sprintBest}, eller kjøpe noe til meg i butikken? Du har ${S.gems||0} 💎.`;cta='Ta et ekstra oppdrag'}
+  else if(S.streak.last===t){head=`Velkommen tilbake${name}!`;msg=`Du har ${todayXP()} av ${GOAL} XP i dag. Bare litt til, så er dagens mål nådd!`}
+  else if(S.streak.last===y&&S.streak.n>0){head=`🔥 ${S.streak.n} dag${S.streak.n>1?'er':''} på rad${name}!`;msg=`Streaken din brenner – ikke la den slukne! Gjør dagens oppdrag, så blir det ${S.streak.n+1} dager.`}
+  else{head=`${hi}${name}! Jeg har savnet deg 🥺`;msg='Det er en stund siden sist. Ingen fare – la oss starte en ny streak i dag. Ett lite oppdrag, så er du i gang!'}
+  const p=COURSES.find(c=>CFG.prizes[c.id]&&!courseDone(c.id));const prizeLine=p?`<p class="note" style="margin:6px 0 0">🎁 Husk premien for ${p.label}: <b>${esc(CFG.prizes[p.id])}</b> (${courseCrowns(p.id)} av ${courseUnits(p.id).length*3} kroner)</p>`:'';
+  $('#layer').innerHTML=`<div class="overlay" data-close><div class="sheet stack" role="dialog" aria-label="Hilsen fra Kubo">
+   <div class="greet-kubo"><div class="bob">${KUBO(110)}</div><span class="wave" aria-hidden="true">👋</span></div>
+   <div class="bubble"><b style="font-family:var(--f-display);font-size:24px;display:block;font-weight:400">${head}</b>${msg}${prizeLine}</div>
+   <div class="note center">😄 ${pick(JOKES)}</div>
+   <button class="btn block" id="greetGo">${cta}</button><button class="btn ghost block" data-close>Senere</button></div></div>`;
+  $('#greetGo').onclick=()=>{closeLayer();startMission()};}
+
+/* chat */
+const SUGG=['Hvordan husker jeg 7-gangen?','Hvorfor er 0,5 det samme som 1/2?','Hva er forskjellen på teller og nevner?','Hvorfor blir 1/2 + 1/4 ikke 2/6?','Hva er prosent?','Kan du gi meg en Minecraft-oppgave med brøk?'];
+let bokQ='';
+function viewBok(){const q=bokQ.toLowerCase().trim();const match=u=>!q||(u.title+' '+u.cards.map(c=>c.h+' '+strip(c.t)).join(' ')).toLowerCase().includes(q);
+  const groups=COURSES.map(c=>{const us=courseUnits(c.id).filter(match);return us.length?`<div class="card stack" style="gap:8px"><b>${c.label}</b>${us.map(u=>`<button class="btn ghost block" data-learn="${u.id}" style="text-align:left;text-transform:none;letter-spacing:0">${u.icon} ${u.title}</button>`).join('')}</div>`:''}).join('');
+  return `<div class="stack"><div class="card"><div class="kubo-say">${KUBO(56)}<div style="min-width:0"><h2 style="font-size:24px">Matteboka</h2><p class="muted" style="margin:0">Står du fast? Søk etter et tema, så finner Kubo forklaringen. Prøv «brøk», «komma», «gange» eller «prosent».</p></div></div></div>
+  <input id="bokQ" class="answer" style="font-size:18px;text-align:left" placeholder="Søk, f.eks. brøk" value="${esc(bokQ)}" aria-label="Søk i matteboka" autocomplete="off">
+  <div class="stack">${groups||'<p class="muted">Fant ingenting. Prøv et annet ord.</p>'}</div></div>`}
+document.addEventListener('input',e=>{if(e.target.id==='bokQ'){bokQ=e.target.value;const pos=e.target.selectionStart;render();const i=$('#bokQ');if(i){i.focus();i.setSelectionRange(pos,pos)}}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-learn]');if(b)openLearn(U.find(u=>u.id===b.dataset.learn))});
+function viewSpor(){if(!IN_CLAUDE)return viewBok();return `<div class="stack"><div class="card"><div class="kubo-say">${KUBO(56)}<div style="min-width:0"><h2 style="font-size:24px">Spør Kubo</h2><p class="muted" style="margin:0">Lurer du på noe i matte? Skriv spørsmålet ditt, så forklarer Kubo med eksempler fra Minecraft, biler, turn og mat.</p></div></div></div>
+  ${canImg?`<div class="card stack"><div class="row" style="flex-wrap:nowrap"><div style="font-size:40px">📸</div><div style="min-width:0"><b>Ta bilde av regnestykket</b><div class="note">Kubo retter svarene dine og viser steg for steg hvordan oppgaven skal løses. Ta bildet rett ovenfra i godt lys.</div></div></div>
+   <div class="row"><label class="btn gold" for="photoIn">📷 Ta bilde</label><label class="btn ghost" for="photoLib">🖼️ Velg fra bilder</label></div>
+   <input type="file" id="photoIn" accept="image/*" capture="environment" class="vh"><input type="file" id="photoLib" accept="image/*" class="vh"></div>`:''}
+  ${sample?'':'<div class="card note">Kubo svarer bare når appen er åpnet i Claude.</div>'}
+  <div class="chat" id="chat">${chat.length?chat.map(m=>`<div class="msg ${m.role==='user'?'me':'bot'}">${m.role==='user'?(m.img?`<img src="${m.img}" class="thumb" alt="Bilde av regnestykket">`:'')+esc(m.content):md(m.content)}</div>`).join(''):`<div class="sugg">${SUGG.map(s=>`<button class="chip" data-sugg="${esc(s)}">${esc(s)}</button>`).join('')}</div>`}</div>
+  ${pendingImg?`<div class="card row" style="flex-wrap:nowrap"><img src="${pendingImg.url}" class="thumb" alt="Valgt bilde" style="margin:0;max-width:120px"><div style="flex:1;min-width:0"><b>Bildet er klart!</b><div class="note">Trykk Send, så retter Kubo. Du kan også skrive hva du lurer på.</div></div><button class="x" id="rmImg" aria-label="Fjern bildet">✕</button></div>`:''}
+  <div class="ask-row"><textarea id="askIn" placeholder="${pendingImg?'Skriv gjerne hva du lurer på (valgfritt) …':'Skriv spørsmålet ditt her …'}" aria-label="Spørsmål til Kubo"></textarea><button class="btn sky" id="askBtn">Send</button></div>
+  ${chat.length?'<button class="btn ghost small" id="newChat" style="align-self:flex-start">Ny samtale</button>':''}</div>`}
+function scrollChat(){const c=$('#chat');if(c&&chat.length)c.lastElementChild.scrollIntoView({block:'nearest'})}
+async function sendPhoto(text){if(chatCtl||!pendingImg)return;const{file,url}=pendingImg;pendingImg=null;
+  chat.push({role:'user',content:text||'Kan du rette dette og forklare?',img:url});render();
+  const c=$('#chat');const el=document.createElement('div');el.className='msg bot';c.appendChild(el);el.scrollIntoView({block:'nearest'});chatCtl=new AbortController();$('#askBtn').textContent='Stopp';
+  S.stats.photos=(S.stats.photos||0)+1;
+  const txt=await askKubo(PHOTO_RULES+(text?`\n\nHan skriver også: «${text}»`:''),el,{signal:chatCtl.signal,images:[file]});chatCtl=null;
+  chat.push({role:'assistant',content:txt||strip(el.innerHTML)||'…'});render()}
+document.addEventListener('change',e=>{if(e.target.id!=='photoIn'&&e.target.id!=='photoLib')return;const f=e.target.files&&e.target.files[0];if(!f)return;pendingImg={file:f,url:URL.createObjectURL(f)};render();const a=$('#askIn');if(a)a.scrollIntoView({block:'center'})});
+document.addEventListener('click',e=>{if(e.target.id==='rmImg'){pendingImg=null;render()}if(e.target.closest('#photoGo')){tab='spor';render();scrollTo({top:0})}});
+async function sendChat(text){text=text.trim();if(pendingImg)return sendPhoto(text);if(!text||chatCtl)return;chat.push({role:'user',content:text});render();
+  const c=$('#chat');const el=document.createElement('div');el.className='msg bot';c.appendChild(el);el.scrollIntoView({block:'nearest'});chatCtl=new AbortController();$('#askBtn').textContent='Stopp';
+  const turns=[{role:'user',content:RULES+'\n\nHer kommer gutten sitt første spørsmål.'},...chat.slice(-10).map(m=>({role:m.role,content:m.img?'[Sendte et bilde av regnestykker] '+m.content:m.content}))];if(turns[1]&&turns[1].role!=='user')turns.splice(1,1);
+  const txt=await askKubo(turns,el,{signal:chatCtl.signal});chatCtl=null;if(txt)chat.push({role:'assistant',content:txt});else chat.push({role:'assistant',content:strip(el.innerHTML)||'…'});render();}
+document.addEventListener('click',e=>{const s=e.target.closest('[data-sugg]');if(s){sendChat(s.dataset.sugg);return}
+  if(e.target.id==='askBtn'){if(chatCtl){chatCtl.abort();return}sendChat($('#askIn').value)}
+  if(e.target.id==='newChat'){chat=[];render()}});
+document.addEventListener('keydown',e=>{if(e.target.id==='askIn'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat(e.target.value)}});
+
+/* parents */
+let resetArm=false;
+function viewVoksen(){
+  if(!CFG.pin)return `<div class="card stack"><h2 style="font-size:26px">🔒 For voksne</h2><p class="muted" style="margin:0">Lag en firesifret PIN-kode. Den beskytter premiene, så barnet ikke kan endre dem selv.</p><input class="pin" id="newPin" inputmode="numeric" maxlength="4" aria-label="Ny PIN"><button class="btn" id="setPin" style="align-self:flex-start">Lagre PIN</button></div>`;
+  if(!parentOpen)return `<div class="card stack"><h2 style="font-size:26px">🔒 For voksne</h2><p class="muted" style="margin:0">Skriv inn PIN-koden.</p><input class="pin" id="pinIn" inputmode="numeric" maxlength="4" aria-label="PIN"><button class="btn" id="unlock" style="align-self:flex-start">Lås opp</button></div>`;
+  const weak=Object.entries(S.facts).filter(([k,f])=>f.w>0).sort((a,b)=>(b[1].w-b[1].c/2)-(a[1].w-a[1].c/2)).slice(0,8);
+  return `<div class="stack"><div class="card stack"><div class="row"><h2 style="font-size:26px;flex:1">Premier per trinn</h2><button class="btn ghost small" id="lockP">Lås</button></div>
+   <p class="muted" style="margin:0">Skriv inn en premie for hvert trinn. Premien låses opp når barnet har fått 3 kroner i alle temaene på trinnet. Merk den som utbetalt når den er gitt.</p>
+   <div class="field"><label for="childName"><b>Barnets fornavn</b> <span class="note">(Kubo bruker det når han hilser)</span></label><input id="childName" value="${esc(CFG.childName||'')}" placeholder="Fornavn" maxlength="30"></div>
+   ${COURSES.map(c=>{const done=courseDone(c.id),paid=CFG.paid[c.id];return `<div class="field"><label for="pz-${c.id}"><b>${c.label}</b> <span class="status-pill ${paid?'pill-ok':done?'pill-gold':'pill-wait'}">${paid?'Utbetalt':done?'Klar til utbetaling':courseCrowns(c.id)+' / '+courseUnits(c.id).length*3+' kroner'}</span></label><div class="row" style="flex-wrap:nowrap"><input id="pz-${c.id}" value="${esc(CFG.prizes[c.id]||'')}" placeholder="F.eks. 300 kr eller kinotur" style="flex:1;min-width:0">${done?`<button class="btn small ${paid?'ghost':'gold'}" data-paid="${c.id}">${paid?'Angre':'Utbetalt'}</button>`:''}</div></div>`}).join('')}
+   <button class="btn" id="savePrizes" style="align-self:flex-start">Lagre premier</button>${cfgRef&&!canCfg?'<p class="note">Premiene lagres bare på denne enheten fordi du ikke er eier av appen.</p>':''}</div>
+   <div class="card stack"><h2 style="font-size:22px">Fremgang</h2>${COURSES.map(c=>`<div><b>${c.label}</b> <span class="note">${courseCrowns(c.id)} av ${courseUnits(c.id).length*3} kroner</span><div class="meter"><i style="width:${courseCrowns(c.id)/(courseUnits(c.id).length*3)*100}%;background:var(--grass)"></i></div></div>`).join('')}
+    <p style="margin:0">Dager på rad: <b>${S.streak.n}</b> · Sist aktiv: <b>${S.streak.last||'aldri'}</b> · XP i dag: <b>${todayXP()}/${GOAL}</b> · Dagsoppdrag: <b>${S.stats.missions||0}</b></p>
+    <p style="margin:0">Leksjoner: <b>${S.stats.lessons}</b> · Riktige svar: <b>${S.stats.correct}</b> · Feil: <b>${S.stats.wrong}</b> · Gangefakta som sitter: <b>${factsKnown()}/100</b></p>
+    ${weak.length?`<p style="margin:0"><b>Gangestykker som er vanskeligst nå:</b> ${weak.map(([k])=>k.replace('x',' · ')).join(', ')}</p>`:''}</div>
+   <div class="card stack"><h2 style="font-size:22px">Innstillinger</h2><div class="row"><button class="btn ghost small" id="sndBtn">Lyd: ${S.sound?'på':'av'}</button><button class="btn ghost small" id="chgPin">Bytt PIN</button></div>
+    <div class="row"><button class="btn small ${resetArm?'red':'ghost'}" id="resetBtn">${resetArm?'Trykk igjen for å slette all fremgang':'Nullstill fremgang'}</button>${resetArm?'<button class="btn ghost small" id="resetNo">Avbryt</button>':''}</div>
+    ${IN_CLAUDE?'':`<div class="stack" style="gap:8px"><b>Sikkerhetskopi</b><p class="note" style="margin:0">Kopier koden og send den til deg selv (f.eks. på SMS), så kan fremgangen hentes tilbake hvis telefonen byttes eller nettleserdata slettes.</p><button class="btn ghost small" id="bkCopy" style="align-self:flex-start">Kopier sikkerhetskopi</button><textarea id="bkIn" rows="2" placeholder="Lim inn en sikkerhetskopi her" style="font:inherit;padding:8px;border-radius:10px;border:2px solid var(--line);background:var(--surface);color:var(--ink)"></textarea><button class="btn ghost small" id="bkLoad" style="align-self:flex-start">Gjenopprett</button></div>`}
+    <p class="note" style="margin:0">${IN_CLAUDE?'Fremgangen lagres på kontoen som bruker appen.':'Fremgangen lagres på denne telefonen.'} Innholdet følger kompetansemålene i LK20 matematikk for 1.–6. trinn.</p></div></div>`}
+document.addEventListener('click',async e=>{const id=e.target.id;
+  if(id==='setPin'){const v=$('#newPin').value.trim();if(!/^\d{4}$/.test(v)){toast('PIN-koden må være fire siffer.');return}CFG.pin=v;parentOpen=true;await saveCfg();render()}
+  if(id==='unlock'){if($('#pinIn').value.trim()===CFG.pin){parentOpen=true;render()}else{$('#pinIn').classList.add('shake');toast('Feil PIN.')}}
+  if(id==='lockP'){parentOpen=false;render()}
+  if(id==='savePrizes'){CFG.childName=$('#childName').value.trim();COURSES.forEach(c=>{CFG.prizes[c.id]=$('#pz-'+c.id).value.trim()});if(await saveCfg())toast('Premiene er lagret.');render()}
+  const pb=e.target.closest('[data-paid]');if(pb){const c=pb.dataset.paid;CFG.paid[c]=!CFG.paid[c];await saveCfg();render()}
+  if(id==='sndBtn'){S.sound=!S.sound;save();render()}
+  if(id==='chgPin'){CFG.pin='';parentOpen=false;await saveCfg();render()}
+  if(id==='resetBtn'){if(!resetArm){resetArm=true;render();return}const snd=S.sound;S=blank();S.sound=snd;resetArm=false;save();toast('Fremgangen er nullstilt.');render()}
+  if(id==='resetNo'){resetArm=false;render()}
+  if(id==='bkCopy'){const data='MK1:'+btoa(unescape(encodeURIComponent(JSON.stringify({S,CFG}))));navigator.clipboard.writeText(data).then(()=>toast('Sikkerhetskopien er kopiert. Lim den inn i en melding til deg selv.')).catch(()=>{const t=$('#bkIn');t.value=data;t.select();toast('Marker teksten i feltet og kopier den.')})}
+  if(id==='bkLoad'){try{const raw=$('#bkIn').value.trim().replace(/^MK1:/,'');const o=JSON.parse(decodeURIComponent(escape(atob(raw))));if(!o.S)throw 0;S=hydrate(o.S);if(o.CFG)CFG=Object.assign({pin:'',prizes:{},paid:{}},o.CFG);save();await saveCfg();toast('Fremgangen er gjenopprettet!');render()}catch(_){toast('Koden ser ikke riktig ut. Sjekk at hele teksten er med.')}}});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='pinIn')$('#unlock').click()});
+
+render();
+setTimeout(()=>{if(!L&&!SP&&!$('#layer').innerHTML)greet()},700);
+</script>
+
+<script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
+</body>
+</html>
