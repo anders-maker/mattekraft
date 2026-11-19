@@ -1167,7 +1167,7 @@ function explainAdd(a,b,minus){const r=+(minus?a-b:a+b).toFixed(10),op=minus?'�
   if(minus&&r<0)return s+`Du tar bort mer enn du har, så svaret blir under null.<br>`+ex.sub(a,b,r);
   if(a<10&&b<10)return s+(minus?`Tell bakover fra ${a}: ${b} hopp ned gir ${r}.`:`Start på det største tallet og tell videre.`)+'<br>'+(minus?ex.sub(a,b,r):ex.add(a,b,r));
   if(!minus){const ta=a-a%10,tb=b-b%10;return s+`Tiere for seg og enere for seg:<br>${ta} + ${tb} = ${ta+tb}<br>${a%10} + ${b%10} = ${a%10+b%10}<br>${ta+tb} + ${a%10+b%10} = ${kk(r)}<br>`+ex.add(a,b,r)}
-  const tb=b-b%10,ob=b%10;return s+`Ta bort tierne først, så enerne:<br>${a} − ${tb} = ${a-tb}${ob?`<br>${a-tb} − ${ob} = ${kk(r)}`:''}<br>Sjekk: ${fmt(r)} + ${fmt(b)} = ${fmt(a)} ✔️<br>`+ex.sub(a,b,r)}
+  const tb=b-b%10,ob=b%10;if(!tb)return s+`Tell ${b} hopp bakover fra ${a}: ${kk(r)}.<br>Sjekk: ${fmt(r)} + ${fmt(b)} = ${fmt(a)} ✔️<br>`+ex.sub(a,b,r);return s+`Ta bort tierne først, så enerne:<br>${a} − ${tb} = ${a-tb}${ob?`<br>${a-tb} − ${ob} = ${kk(r)}`:''}<br>Sjekk: ${fmt(r)} + ${fmt(b)} = ${fmt(a)} ✔️<br>`+ex.sub(a,b,r)}
 function explainDiv(a,b){if(b===0)return `Å dele på 0 går ikke! 🙅 Tenk deg ${fmt(a)} godteri som skal deles på 0 venner. Det finnes ingen som kan få noe, så svaret finnes ikke.`;
   const r=+(a/b).toFixed(10);
   if(Number.isInteger(a)&&Number.isInteger(b)&&a%b===0)return `<b>${fmt(a)} : ${fmt(b)} = ${fmt(r)}</b><br>Fordi ${fmt(r)} · ${fmt(b)} = ${fmt(a)}. Deling er gange baklengs!<br>${ex.div(a,b,r)}`;
@@ -1277,9 +1277,59 @@ function botSend(text){text=text.trim();if(!text)return;chat.push({role:'user',c
   chat.push({role:'assistant',html});render()}
 function viewBot(){if(bokOpen)return `<button class="btn ghost small" id="bokClose" style="margin-bottom:12px">◀ Tilbake til Kubo-chat</button>`+viewBok();
   return `<div class="stack"><div class="card"><div class="kubo-say">${KUBO(56)}<div style="min-width:0"><h2 style="font-size:24px">Spør Kubo</h2><p class="muted" style="margin:0">Skriv et regnestykke eller et tema, så viser Kubo hvordan. Du kan også be om en oppgave!</p></div></div><button class="btn ghost small" id="bokOpen" style="margin-top:10px">📖 Bla i matteboka</button></div>
-  <div class="chat" id="chat">${chat.length?chat.map(m=>`<div class="msg ${m.role==='user'?'me':'bot'}">${m.role==='user'?esc(m.content):m.html||md(m.content||'')}</div>`).join(''):`<div class="msg bot">Hei${CFG.childName?' '+esc(CFG.childName):''}! 👋 Hva lurer du på? Trykk på en knapp eller skriv selv.${krCfg().per>0?(moneyToday().n<krCfg().goal?`<br><br>💰 <b>Gjør ${krCfg().goal-moneyToday().n} oppgaver${moneyToday().n?' til':''} i dag, så får du ${krFmt(krGoalSum())}!</b> Trykk «Gi meg en oppgave» for å starte.`:`<br><br>💰 Du har tjent ${krFmt(moneyToday().kr)} i dag. Rått!`):''}</div><div class="sugg">${BOT_SUGG.map(s=>`<button class="chip" data-sugg="${esc(s)}">${esc(s)}</button>`).join('')}</div>`}</div>
+  ${ocrCard()}<input type="file" id="botCam" accept="image/*" capture="environment" class="vh"><input type="file" id="botLib" accept="image/*" class="vh">
+  <div class="chat" id="chat">${chat.length?chat.map(m=>`<div class="msg ${m.role==='user'?'me':'bot'}">${m.role==='user'?(m.img?`<img src="${m.img}" class="thumb" alt="Bilde av arket">`:'')+md(m.content):m.html||md(m.content||'')}</div>`).join(''):`<div class="msg bot">Hei${CFG.childName?' '+esc(CFG.childName):''}! 👋 Hva lurer du på? Trykk på en knapp eller skriv selv.${krCfg().per>0?(moneyToday().n<krCfg().goal?`<br><br>💰 <b>Gjør ${krCfg().goal-moneyToday().n} oppgaver${moneyToday().n?' til':''} i dag, så får du ${krFmt(krGoalSum())}!</b> Trykk «Gi meg en oppgave» for å starte.`:`<br><br>💰 Du har tjent ${krFmt(moneyToday().kr)} i dag. Rått!`):''}</div><div class="sugg">${BOT_SUGG.map(s=>`<button class="chip" data-sugg="${esc(s)}">${esc(s)}</button>`).join('')}</div>`}</div>
   <div class="ask-row"><textarea id="askIn" placeholder="${botQuiz?'Skriv svaret ditt her …':'F.eks. 7 · 8 eller «brøk» …'}" aria-label="Skriv til Kubo" inputmode="text"></textarea><button class="btn sky" id="askBtn">Send</button></div>
   ${chat.length?'<button class="btn ghost small" id="newChat" style="align-self:flex-start">Ny samtale</button>':''}</div>`}
+/* ---- foto av regnestykker: lokal tekstgjenkjenning (Tesseract.js), ingen AI, bildet forlater ikke telefonen ---- */
+let ocr=null,ocrWorker=null;
+function loadTess(){if(window.Tesseract)return Promise.resolve();return new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';s.onload=res;s.onerror=()=>rej(new Error('net'));document.head.appendChild(s)})}
+async function prepImage(url){const img=new Image();await new Promise((r,j)=>{img.onload=r;img.onerror=j;img.src=url});
+  const sc=Math.min(1,1800/Math.max(img.naturalWidth,img.naturalHeight));const w=Math.round(img.naturalWidth*sc),h=Math.round(img.naturalHeight*sc);
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d');g.drawImage(img,0,0,w,h);
+  const im=g.getImageData(0,0,w,h),d=im.data;let lo=255,hi=0;for(let i=0;i<d.length;i+=4){const v=d[i]*.299+d[i+1]*.587+d[i+2]*.114;d[i]=v;if(v<lo)lo=v;if(v>hi)hi=v}
+  const k=255/Math.max(1,hi-lo);for(let i=0;i<d.length;i+=4){const v=Math.min(255,Math.max(0,(d[i]-lo)*k));d[i]=d[i+1]=d[i+2]=v}g.putImageData(im,0,0);return cv}
+const cleanOcr=l=>l.replace(/[xX*×]/g,' · ').replace(/[—–]/g,'-').replace(/\s*([+\-·:=])\s*/g,' $1 ').replace(/\s+/g,' ').replace(/([+\-·:=])( \1)+/g,'$1').trim();
+async function readPhoto(file){const url=URL.createObjectURL(file);ocr={st:'load',url,lines:[]};render();
+  try{await loadTess();const cv=await prepImage(url);
+    if(!ocrWorker){ocrWorker=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status==='recognizing text'){const p=$('#ocrPct');if(p)p.textContent=Math.round(m.progress*100)+' %'}}});
+      await ocrWorker.setParameters({tessedit_char_whitelist:'0123456789+-=xX*/:.,()',tessedit_pageseg_mode:'6'})}
+    if(!ocr)return;ocr.st='read';render();const {data}=await ocrWorker.recognize(cv);if(!ocr)return;
+    const lines=data.text.split('\n').map(cleanOcr).filter(l=>/\d/.test(l)&&/[+\-·:\/=]/.test(l));
+    ocr.st='edit';ocr.none=!lines.length;ocr.lines=lines.length?lines:[''];render()}
+  catch(e){if(ocr){ocr.st='err';ocr.lines=[''];render()}}}
+function evalExpr(s){const tk=(s.match(/\d+(?:\.\d+)?|[()+\-*\/]/g)||[]).map(x=>/\d/.test(x)?+x:x);if(!tk.length)return null;const r=evalSteps(tk);return r&&!r.div0?r.val:null}
+function gradeLine(l){const s=botNorm(l),i=s.indexOf('=');const left=i<0?s:s.slice(0,i),right=i<0?'':s.slice(i+1).trim();
+  const v=evalExpr(left);if(v==null)return {st:'?',l};const expl=botMath(left,l)||'';
+  if(!/\d/.test(right))return {st:'open',l,v,expl};
+  const rm=right.match(/^(\d+)\s*r(?:est)?\s*(\d+)$/),lt=left.match(/^\s*(\d+)\s*\/\s*(\d+)\s*$/);
+  if(rm&&lt){const a=+lt[1],b=+lt[2];return {st:+rm[1]===Math.floor(a/b)&&+rm[2]===a%b?'ok':'bad',l,v,expl,show:`${Math.floor(a/b)} rest ${a%b}`}}
+  const a=evalExpr(right);return {st:a!=null&&Math.abs(a-v)<1e-6?'ok':'bad',l,v,expl}}
+function gradeHtml(lines){const rs=lines.map(x=>x.trim()).filter(Boolean).map(gradeLine);if(!rs.length)return 'Jeg fant ingen regnestykker å rette 🤔';
+  const graded=rs.filter(r=>r.st==='ok'||r.st==='bad'),ok=graded.filter(r=>r.st==='ok').length;
+  const how=r=>r.expl?`<details><summary class="note" style="cursor:pointer">Vis hvordan</summary><div style="margin-top:6px">${r.expl}</div></details>`:'';
+  const row=r=>`<div style="padding:8px 0;border-top:1px solid var(--line)">${r.st==='ok'?`✅ ${esc(r.l)}`:r.st==='bad'?`❌ ${esc(r.l)}<br>Riktig svar er <b>${r.show||fmt(r.v)}</b>${how(r)}`:r.st==='open'?`🧮 ${esc(r.l.replace(/=\s*\??\s*$/,''))} = <b>${fmt(r.v)}</b>${how(r)}`:`❓ «${esc(r.l)}» skjønte jeg ikke. Skriv det inn selv, så hjelper jeg.`}</div>`;
+  const head=graded.length?`<b style="font-size:20px">${ok===graded.length?'🎉':'📸'} Du fikk ${ok} av ${graded.length} riktig!</b><br>${ok===graded.length?pick(YAY):ok>=graded.length/2?'Godt jobba! Se på de med ❌, og trykk «Vis hvordan».':'Ingen fare! Feil er trening for hjernen 🧠. Trykk «Vis hvordan» på dem med ❌.'}`:'<b>Her er svarene, steg for steg:</b>';
+  return head+rs.map(row).join('')+`<div class="sugg" style="margin-top:10px"><label class="chip" for="botCam">📸 Ta nytt bilde</label><button class="chip" data-sugg="Gi meg en oppgave">Gi meg en oppgave</button></div>`}
+function ocrCard(){if(!ocr)return `<div class="card stack" style="gap:8px"><div class="row" style="flex-wrap:nowrap"><div style="font-size:40px">📸</div><div style="min-width:0"><b>Ta bilde av regnestykket</b><div class="note">Kubo leser stykkene på arket og retter dem. Skriv tydelig, ta bildet rett ovenfra i godt lys. Skriv svaret etter =, f.eks. 7 · 8 = 56.</div></div></div>
+   <div class="row"><label class="btn gold small" for="botCam">📷 Ta bilde</label><label class="btn ghost small" for="botLib">🖼️ Velg fra bilder</label></div></div>`;
+  const busy=ocr.st==='load'||ocr.st==='read';
+  return `<div class="card stack" style="gap:10px"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><img src="${ocr.url}" class="thumb" alt="Bildet av arket" style="max-width:110px;margin:0"><div style="min-width:0;flex:1">
+   ${busy?`<b>Kubo leser arket … <span id="ocrPct"></span></b><div class="note">${ocr.st==='load'?'Første gang laster Kubo inn lesebrillene sine. Det kan ta litt tid.':'Nesten ferdig!'}</div>`:
+     ocr.st==='err'?'<b>Kubo klarte ikke å lese bildet 😕</b><div class="note">Sjekk at telefonen er på nett første gang. Du kan også skrive stykket selv under.</div>':
+     `<b>${ocr.none?'Jeg fant ingen stykker 🤔':'Dette leste Kubo:'}</b><div class="note">${ocr.none?'Skriv stykket selv, eller ta et nytt bilde tettere på.':'Sjekk at det stemmer med arket, og rett opp hvis Kubo leste feil.'} Svaret skrives etter =.</div>`}</div></div>
+   ${busy?'':`${ocr.lines.map((l,i)=>`<div class="row" style="flex-wrap:nowrap;gap:6px"><input class="answer ocrLine" data-i="${i}" value="${esc(l)}" placeholder="F.eks. 7 · 8 = 56" style="font-size:18px;text-align:left;flex:1;min-width:0" aria-label="Regnestykke ${i+1}" autocomplete="off"><button class="x" data-ocrdel="${i}" aria-label="Fjern stykke ${i+1}">✕</button></div>`).join('')}
+   <button class="btn ghost small" id="ocrAdd" style="align-self:flex-start">+ Legg til stykke</button>
+   <div class="row"><button class="btn" id="ocrGo">✅ Rett stykkene</button><button class="btn ghost" id="ocrCancel">Avbryt</button></div>`}</div>`}
+document.addEventListener('change',e=>{if(e.target.id!=='botCam'&&e.target.id!=='botLib')return;const f=e.target.files&&e.target.files[0];e.target.value='';if(f){bokOpen=false;readPhoto(f);scrollTo({top:0})}});
+document.addEventListener('input',e=>{if(e.target.classList.contains('ocrLine')&&ocr)ocr.lines[+e.target.dataset.i]=e.target.value});
+document.addEventListener('click',e=>{if(!ocr)return;const del=e.target.closest('[data-ocrdel]');
+  if(del){ocr.lines.splice(+del.dataset.ocrdel,1);if(!ocr.lines.length)ocr.lines=[''];render();return}
+  if(e.target.id==='ocrAdd'){ocr.lines.push('');render();const ins=document.querySelectorAll('.ocrLine');ins[ins.length-1].focus();return}
+  if(e.target.id==='ocrCancel'){ocr=null;render();return}
+  if(e.target.id==='ocrGo'){const lines=ocr.lines.filter(l=>l.trim());if(!lines.length){toast('Skriv minst ett stykke.');return}
+    chat.push({role:'user',content:'📸 Kan du rette disse?\n'+lines.join('\n'),img:ocr.url});let html;try{html=gradeHtml(lines)}catch(_){html='Oi, noe gikk galt. Prøv å skrive stykkene på nytt.'}
+    chat.push({role:'assistant',html});S.stats.photos=(S.stats.photos||0)+1;save();ocr=null;render()}});
 document.addEventListener('click',e=>{if(e.target.id==='bokOpen'){bokOpen=true;render();scrollTo({top:0})}if(e.target.id==='bokClose'){bokOpen=false;render()}if(e.target.id==='newChat')botQuiz=null});
 
 /* parents */
