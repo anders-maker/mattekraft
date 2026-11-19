@@ -812,8 +812,21 @@ unit({id:'t6-trekant',c:'t6',icon:'⛺',title:'Areal av trekant og parallellogra
 
 /* ============ state ============ */
 const LS='mattekraft-v1',LSC='mattekraft-cfg-v1';
-const blank=()=>({xp:0,gems:0,owned:['gress','ingen'],skin:'gress',hat:'ingen',today:{d:'',xp:0},mission:'',units:{},trophies:{},streak:{n:0,last:''},stats:{lessons:0,correct:0,wrong:0,best:0,fixed:0,asked:0,sprintBest:0,perfect:0,missions:0,bought:0},facts:{},updatedAt:0,sound:true});
+const blank=()=>({xp:0,gems:0,owned:['gress','ingen'],skin:'gress',hat:'ingen',today:{d:'',xp:0},mission:'',units:{},trophies:{},streak:{n:0,last:''},stats:{lessons:0,correct:0,wrong:0,best:0,fixed:0,asked:0,sprintBest:0,perfect:0,missions:0,bought:0},facts:{},money:{total:0,d:'',n:0,kr:0},updatedAt:0,sound:true});
 const GOAL=40;
+/* lommepenger: kr per riktig oppgave (satt av voksen) */
+const krCfg=()=>Object.assign({per:1,goal:10,cap:20,paid:0},CFG.kr||{});
+const krFmt=x=>fmt(+(+x).toFixed(2))+' kr';
+function moneyToday(){const m=S.money||(S.money={total:0,d:'',n:0,kr:0});if(m.d!==todayStr()){m.d=todayStr();m.n=0;m.kr=0}return m}
+const krBalance=()=>Math.max(0,+((((S.money&&S.money.total)||0)-krCfg().paid)).toFixed(2));
+const krGoalSum=()=>{const k=krCfg();return k.cap?Math.min(k.goal*k.per,k.cap):k.goal*k.per};
+function earn(){const k=krCfg(),m=moneyToday();m.n++;let got=0;
+  if(k.per>0&&(!k.cap||m.kr<k.cap)){got=k.cap?Math.min(k.per,+(k.cap-m.kr).toFixed(2)):k.per;m.kr=+(m.kr+got).toFixed(2);m.total=+(m.total+got).toFixed(2)}
+  if(k.per>0&&m.n===k.goal)setTimeout(()=>{toast(`🎉 ${k.goal} oppgaver i dag! Du har tjent ${krFmt(m.kr)}!`);if(typeof confetti==='function')try{confetti()}catch(e){}},400);
+  return got}
+function krPanel(){const k=krCfg();if(!(k.per>0))return '';const m=moneyToday(),left=Math.max(0,k.goal-m.n);
+  const head=left===k.goal?`Gjør ${k.goal} oppgaver i dag, så får du ${krFmt(krGoalSum())}!`:left?`${left} oppgave${left>1?'r':''} til, så har du ${krFmt(krGoalSum())} i dag!`:'Dagens kroneoppdrag er fullført! 🎉';
+  return `<div class="row" style="flex-wrap:nowrap;gap:10px;margin-top:10px"><div style="font-size:34px;flex:none">💰</div><div style="flex:1;min-width:0"><b>${head}</b><div class="meter"><i style="width:${Math.min(1,m.n/k.goal)*100}%;background:var(--gold)"></i></div><span class="note">${m.n}/${k.goal} oppgaver · ${krFmt(m.kr)} i dag · ${krFmt(k.per)} per riktig svar · Lommebok: <b>${krFmt(krBalance())}</b></span></div></div>`}
 function addXP(n){S.xp+=n;const t=todayStr();if(S.today.d!==t)S.today={d:t,xp:0};S.today.xp+=n}
 const todayXP=()=>S.today&&S.today.d===todayStr()?S.today.xp:0;
 let S=blank(),CFG={pin:'',prizes:{},paid:{}};
@@ -931,7 +944,7 @@ function prizeBox(c){const p=CFG.prizes[c.id];const have=courseCrowns(c.id),max=
   return `<div class="prize" ${done&&!paid?'style="border-style:solid;background:var(--surface-2)"':''}><div class="chest">${paid?'✅':done?'🎉':'🎁'}</div><div style="flex:1;min-width:0"><b>${done?(paid?'Premie utbetalt: ':'Premien er låst opp! '):'Premie: '}${esc(p)}</b>${done&&!paid?'<span class="note">Vis dette til en voksen!</span>':`<span class="note">Få 3 kroner i alle temaene på ${c.label}.</span>`}<div class="meter"><i style="width:${have/max*100}%"></i></div><span class="note">${have} av ${max} kroner</span></div></div>`}
 function ring(p){const r=26,c=2*Math.PI*r;return `<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true" style="flex:none"><circle cx="32" cy="32" r="${r}" style="fill:none;stroke:var(--line);stroke-width:8"/><circle cx="32" cy="32" r="${r}" transform="rotate(-90 32 32)" style="fill:none;stroke:${p>=1?'var(--gold)':'var(--grass)'};stroke-width:8;stroke-linecap:round;stroke-dasharray:${(Math.min(1,p)*c).toFixed(1)} ${c.toFixed(1)}"/><text x="32" y="38" text-anchor="middle" style="fill:var(--ink);font:900 16px var(--f-body)">${p>=1?'✓':Math.round(p*100)+'%'}</text></svg>`}
 function dailyPanel(){const x=todayXP(),done=S.mission===todayStr();
-  return `<div class="card daily"><div class="row" style="flex-wrap:nowrap">${ring(x/GOAL)}<div style="flex:1;min-width:0"><b>Dagens mål: ${GOAL} XP</b><div class="note">${x>=GOAL?'Nådd! Streaken er trygg i dag 🔥':`${x} av ${GOAL} XP · ca. ${Math.max(1,Math.ceil((GOAL-x)/22))} leksjon${Math.ceil((GOAL-x)/22)>1?'er':''} igjen`}</div></div></div>
+  return `<div class="card daily"><div class="row" style="flex-wrap:nowrap">${ring(x/GOAL)}<div style="flex:1;min-width:0"><b>Dagens mål: ${GOAL} XP</b><div class="note">${x>=GOAL?'Nådd! Streaken er trygg i dag 🔥':`${x} av ${GOAL} XP · ca. ${Math.max(1,Math.ceil((GOAL-x)/22))} leksjon${Math.ceil((GOAL-x)/22)>1?'er':''} igjen`}</div></div></div>${krPanel()}
    <button class="btn ${done?'ghost':'sky'} block" id="missionBtn">${done?'🎯 Ta et ekstra oppdrag':'🎯 Start Dagens oppdrag (+20 XP bonus)'}</button>${canImg?'<button class="btn ghost block" id="photoGo">📸 Få leksene rettet av Kubo</button>':''}</div>`}
 document.addEventListener('click',e=>{if(e.target.closest('#missionBtn')){closeLayer();startMission()}});
 function viewKurs(){const c=COURSES.find(x=>x.id===course)||COURSES[4];const us=courseUnits(c.id);const off=[0,55,85,55,0,-55,-85,-55];
@@ -994,13 +1007,14 @@ function renderQ(){const q=L.queue[L.i];const pct=Math.min(100,(L.firstOk+L.fixe
   L.state='ask';L.sel=null;}
 function recordFact(q,ok){if(!q.fact)return;const[a,b]=q.fact;if(a<1||b<1||a>10||b>10)return;const k=Math.min(a,b)+'x'+Math.max(a,b);const f=S.facts[k]||{c:0,w:0};ok?f.c++:f.w++;S.facts[k]=f}
 function submit(){if(L.state!=='ask')return;const q=L.queue[L.i];const given=q.kind==='choice'?L.sel:$('#ans').value;if(given==null||!String(given).trim())return;
-  const ok=check(q,given);L.state='fb';recordFact(q,ok);beep(ok);
+  const ok=check(q,given);L.state='fb';recordFact(q,ok);beep(ok);let got=0;
+  if(ok&&!q.retry){got=earn();L.kr=+((L.kr||0)+got).toFixed(2)}
   if(ok){L.combo++;S.stats.correct++;if(L.combo>S.stats.best)S.stats.best=L.combo;if(q.retry){L.fixed++;S.stats.fixed=Math.max(S.stats.fixed,L.fixed)}else{L.firstOk++;addGems(1);L.gems=(L.gems||0)+1}L.xp+=q.retry?1:2}
   else{L.combo=0;L.mistakes++;S.stats.wrong++;if(!q.retry)L.wrongIds.add(L.i);const again=L.u.gen(L.l);again.retry=true;/* re-ask same question later */const copy={...q,retry:true};L.queue.push(Math.random()<.5?copy:Object.assign(again,{retry:true}));}
   document.querySelectorAll('[data-opt]').forEach(b=>{if(b.dataset.opt===q.a)b.classList.add('right');else if(b.dataset.opt===given&&!ok)b.classList.add('wrong')});
   if(!ok&&$('#ans'))$('#ans').classList.add('shake');
   const foot=$('#foot');foot.className='foot '+(ok?'ok':'bad');
-  foot.innerHTML=`<div class="wrap"><div class="fb-title">${ok?pick(PRAISE):'Riktig svar: '+esc(showAns(q))}</div>${ok?(L.combo>=3&&L.combo%5===0?`<div class="why">🔥 ${L.combo} på rad! Du er i flytsonen!</div>`:''):`<div class="kubo-say">${KUBO(38,'sad')}<div style="min-width:0"><div class="why">${pick(COMFORT)}</div><div>${q.why||''}</div></div></div>`}
+  foot.innerHTML=`<div class="wrap"><div class="fb-title">${ok?pick(PRAISE):'Riktig svar: '+esc(showAns(q))}</div>${got?`<div class="note" style="font-weight:800">💰 +${krFmt(got)} · ${moneyToday().n}/${krCfg().goal} oppgaver i dag</div>`:''}${ok?(L.combo>=3&&L.combo%5===0?`<div class="why">🔥 ${L.combo} på rad! Du er i flytsonen!</div>`:''):`<div class="kubo-say">${KUBO(38,'sad')}<div style="min-width:0"><div class="why">${pick(COMFORT)}</div><div>${q.why||''}</div></div></div>`}
    ${!ok&&sample?'<button class="btn ghost small" id="explainBtn">🤖 Forklar meg dette, Kubo</button><div id="exOut" class="bubble" hidden></div>':''}
    ${ok&&q.why?`<details><summary class="note" style="cursor:pointer">Hvorfor?</summary><div>${q.why}</div></details>`:''}
    <button class="btn ${ok?'':'red'} block" id="contBtn">Fortsett</button></div>`;
@@ -1017,7 +1031,7 @@ function finish(){const perfect=L.mistakes===0;const isM=L.u.id==='mission';cons
    <div class="end-ic">${perfect?'💎':crownNew?'👑':'⭐'}</div><h2 style="font-size:32px">${perfect?'Feilfritt!':pick(END)}</h2>
    ${goalNow?`<div class="card" style="border-color:var(--grass)"><b>🎖️ Dagens mål er nådd!</b> Streaken din er trygg i dag.</div>`:''}
    ${firstM?`<div class="card" style="border-color:var(--sky)"><b>🎯 Dagens oppdrag fullført!</b> +20 XP og +15 💎 i bonus.</div>`:''}
-   <div class="row" style="justify-content:center"><div class="stat">⚡ +${L.xp} XP</div><div class="stat">💎 +${L.gems||0}</div><div class="stat">🎯 ${Math.round(L.firstOk/L.total*100)} %</div>${crownNew?`<div class="stat">👑 Krone ${L.l}</div>`:''}<div class="stat">🔥 ${S.streak.n} dag${S.streak.n===1?'':'er'}</div></div>
+   <div class="row" style="justify-content:center"><div class="stat">⚡ +${L.xp} XP</div><div class="stat">💎 +${L.gems||0}</div>${L.kr?`<div class="stat">💰 +${krFmt(L.kr)}</div>`:''}<div class="stat">🎯 ${Math.round(L.firstOk/L.total*100)} %</div>${crownNew?`<div class="stat">👑 Krone ${L.l}</div>`:''}<div class="stat">🔥 ${S.streak.n} dag${S.streak.n===1?'':'er'}</div></div>
    ${L.fixed?`<p class="why">Du rettet opp ${L.fixed} feil underveis. Det er sånn man blir god!</p>`:''}
    ${cDone?`<div class="card" style="border-color:var(--gold)"><div style="font-size:48px">🎓</div><b>Du har fullført hele ${cDone.label}!</b>${CFG.prizes[cDone.id]?`<p>Premien din er låst opp: <b>${esc(CFG.prizes[cDone.id])}</b>. Vis dette til en voksen!</p>`:''}</div>`:''}
    ${nw.length?`<h3>Nye pokaler!</h3><div class="tgrid">${nw.map(t=>`<div class="trophy"><div class="t-ic">${t.ic}</div><b>${t.n}</b><small>${t.d}</small></div>`).join('')}</div>`:''}
@@ -1073,9 +1087,10 @@ function greet(){const t=todayStr(),y=todayStr(new Date(Date.now()-864e5)),hr=ne
   else if(S.streak.last===y&&S.streak.n>0){head=`🔥 ${S.streak.n} dag${S.streak.n>1?'er':''} på rad${name}!`;msg=`Streaken din brenner – ikke la den slukne! Gjør dagens oppdrag, så blir det ${S.streak.n+1} dager.`}
   else{head=`${hi}${name}! Jeg har savnet deg 🥺`;msg='Det er en stund siden sist. Ingen fare – la oss starte en ny streak i dag. Ett lite oppdrag, så er du i gang!'}
   const p=COURSES.find(c=>CFG.prizes[c.id]&&!courseDone(c.id));const prizeLine=p?`<p class="note" style="margin:6px 0 0">🎁 Husk premien for ${p.label}: <b>${esc(CFG.prizes[p.id])}</b> (${courseCrowns(p.id)} av ${courseUnits(p.id).length*3} kroner)</p>`:'';
+  const kc=krCfg(),km=moneyToday();const moneyLine=kc.per>0?`<p style="margin:8px 0 0;font-weight:800">💰 ${km.n>=kc.goal?`Du har allerede tjent ${krFmt(km.kr)} i dag. Sterkt!`:km.n?`${kc.goal-km.n} oppgaver til, så har du ${krFmt(krGoalSum())} i dag!`:`Gjør ${kc.goal} oppgaver i dag, så får du ${krFmt(krGoalSum())}!`}</p>`:'';
   $('#layer').innerHTML=`<div class="overlay" data-close><div class="sheet stack" role="dialog" aria-label="Hilsen fra Kubo">
    <div class="greet-kubo"><div class="bob">${KUBO(110)}</div><span class="wave" aria-hidden="true">👋</span></div>
-   <div class="bubble"><b style="font-family:var(--f-display);font-size:24px;display:block;font-weight:400">${head}</b>${msg}${prizeLine}</div>
+   <div class="bubble"><b style="font-family:var(--f-display);font-size:24px;display:block;font-weight:400">${head}</b>${msg}${moneyLine}${prizeLine}</div>
    <div class="note center">😄 ${pick(JOKES)}</div>
    <button class="btn block" id="greetGo">${cta}</button><button class="btn ghost block" data-close>Senere</button></div></div>`;
   $('#greetGo').onclick=()=>{closeLayer();startMission()};}
@@ -1224,13 +1239,15 @@ function quizFrom(u,table){for(let i=0;i<40;i++){let q;
     else if(u){try{q=u.gen(rnd(1,2))}catch(e){q=null}}
     else{const weak=Object.entries(S.facts).filter(([k,f])=>f.w>f.c/2).map(([k])=>k.split('x').map(Number));let x,y;if(weak.length&&Math.random()<.7)[x,y]=pick(weak);else{x=rnd(3,9);y=rnd(2,10)}if(Math.random()<.5)[x,y]=[y,x];q=N(`${x} · ${y} = ?`,x*y,{fact:[x,y],hint:tipFor(x,y),why:whyMult(x,y)})}
     if(q&&q.kind!=='choice'||q&&q.opts&&!q.opts.some(o=>/[<]/.test(o)))return q}return null}
+function krLine(){const k=krCfg();if(!(k.per>0))return '';const m=moneyToday(),left=k.goal-m.n;
+  return `<div class="note" style="margin-top:6px;font-weight:800">💰 ${left>0?`${m.n}/${k.goal} oppgaver i dag. ${left===1?'Bare én til':left+' til'}, så har du tjent ${krFmt(krGoalSum())}!`:left===0?`Du klarte ${k.goal} oppgaver og har tjent ${krFmt(m.kr)} i dag! 🎉`:`${m.n} oppgaver i dag, ${krFmt(m.kr)} tjent. Du er rå!`}</div>`}
 function askQuiz(u,table){const q=quizFrom(u,table);if(!q)return 'Fant ingen oppgave akkurat nå. Prøv et annet tema!';botQuiz={q,tries:0,u,table};
   return `✏️ <b>Oppgave${u?' i '+esc(u.title):table?' i '+table+'-gangen':''}:</b><div style="font-size:20px;font-weight:800;margin:6px 0">${q.q}</div>${q.vis?`<div class="vis-box">${q.vis}</div>`:''}${q.kind==='choice'?chips(q.opts):`<div class="note">${fmtHint[q.kind]||'Skriv svaret ditt.'}</div>`}${chips(['💡 Hint','Vis svaret'])}`}
 function quizAnswer(t,raw){const z=botQuiz,q=z.q;
   if(/hint|tips|hjelp|vet ikke|aner ikke/.test(t))return `💡 ${q.hint||'Prøv å dele opp oppgaven i mindre biter.'}<br>Prøv igjen!`+chips(['Vis svaret']);
   if(/vis svaret|fasit|gi opp|svaret/.test(t)){botQuiz=null;recordFact(q,false);save();return `Svaret er <b>${esc(showAns(q))}</b>.<br>${q.why||''}<br>Ingen fare, nå vet du det! 💪`+chips(['Ny oppgave','Noe annet'])}
-  if(check(q,raw.trim())){botQuiz=null;recordFact(q,true);S.stats.correct++;addXP(2);const nw=checkTrophies();save();nw.forEach(x=>toast('Ny pokal: '+x.n+' '+x.ic));
-    return `${pick(YAY)} <b>${esc(showAns(q))}</b> er riktig! <span class="note">+2 XP</span><br>${q.why||''}`+chips(['Ny oppgave','Noe annet'])}
+  if(check(q,raw.trim())){botQuiz=null;recordFact(q,true);S.stats.correct++;addXP(2);const got=z.tries===0?earn():0;const nw=checkTrophies();save();nw.forEach(x=>toast('Ny pokal: '+x.n+' '+x.ic));
+    return `${pick(YAY)} <b>${esc(showAns(q))}</b> er riktig! <span class="note">+2 XP${got?' · 💰 +'+krFmt(got):''}</span><br>${q.why||''}${krLine()}`+chips(['Ny oppgave','Noe annet'])}
   z.tries++;if(z.tries<2)return `Nesten! Ikke ${esc(raw.trim())}. 🤔<br>💡 ${q.hint||'Sjekk utregningen en gang til.'}<br>Prøv én gang til!`;
   botQuiz=null;recordFact(q,false);S.stats.wrong++;save();return `Det riktige svaret er <b>${esc(showAns(q))}</b>.<br>${q.why||''}<br>Feil er bare trening for hjernen 🧠. Vi tar en ny!`+chips(['Ny oppgave','Noe annet'])}
 function botReply(raw){const t=raw.toLowerCase().trim(),s=botNorm(raw),name=CFG.childName?' '+esc(CFG.childName):'';let m;
@@ -1238,7 +1255,8 @@ function botReply(raw){const t=raw.toLowerCase().trim(),s=botNorm(raw),name=CFG.
     if(!looksQ&&(/\d/.test(t)||/hint|tips|hjelp|vet ikke|aner ikke|svaret|fasit|gi opp/.test(t)||botQuiz.q.kind==='choice'))return quizAnswer(t,raw)}
   if(m=raw.match(/^oppgave:\s*(.+)$/i)){const u=U.find(x=>x.title.toLowerCase()===m[1].trim().toLowerCase());if(u)return askQuiz(u)}
   if(/^noe annet/.test(t)){botQuiz=null;return 'Klart! Hva vil du gjøre nå? 😊'+chips(BOT_SUGG.slice(0,6))}
-  if(/^(hei|hallo|heisann|hey|hi|halla|yo|god morgen|god dag|morn)\b/.test(t)&&t.length<25)return `Hei${name}! 👋 Jeg er Kubo. Hva skal vi regne på i dag?`+chips(BOT_SUGG.slice(0,5));
+  if(/^(hei|hallo|heisann|hey|hi|halla|yo|god morgen|god dag|morn)\b/.test(t)&&t.length<25)return `Hei${name}! 👋 Jeg er Kubo. Hva skal vi regne på i dag?`+krLine()+chips(BOT_SUGG.slice(0,5));
+  if(/lommebok|lommepenger|tjent|hvor mye (kr|kroner|penger) har jeg/.test(t)&&!/\d/.test(t)){const k=krCfg();if(k.per>0)return `💰 Lommeboka di: <b>${krFmt(krBalance())}</b> til gode.<br>Du får ${krFmt(k.per)} for hver oppgave du klarer på første forsøk.`+krLine()+chips(['Gi meg en oppgave'])}
   if(/vits|spøk|noe morsomt/.test(t))return '😄 '+pick(JOKES)+chips(['En vits til','Gi meg en oppgave']);
   if(/^(takk|tusen takk|tnx|ok takk)/.test(t))return 'Bare hyggelig! 💚 Du gjør det kjempebra.'+chips(['Gi meg en oppgave']);
   if(/hvem er du|hva heter du|er du (en )?(robot|ai|menneske|ekte)|hva kan du/.test(t))return `Jeg er Kubo, mattehjelperen din 🟩. Jeg er en enkel robot, så jeg kan ikke snakke om alt, men jeg kan:<br>• regne ut stykker og vise hvordan (skriv f.eks. <b>8 · 7</b> eller <b>3/4 + 1/8</b>)<br>• forklare temaer (skriv f.eks. <b>brøk</b> eller <b>prosent</b>)<br>• gi deg oppgaver og rette dem (skriv <b>oppgave</b>)`+chips(BOT_SUGG.slice(0,4));
@@ -1259,7 +1277,7 @@ function botSend(text){text=text.trim();if(!text)return;chat.push({role:'user',c
   chat.push({role:'assistant',html});render()}
 function viewBot(){if(bokOpen)return `<button class="btn ghost small" id="bokClose" style="margin-bottom:12px">◀ Tilbake til Kubo-chat</button>`+viewBok();
   return `<div class="stack"><div class="card"><div class="kubo-say">${KUBO(56)}<div style="min-width:0"><h2 style="font-size:24px">Spør Kubo</h2><p class="muted" style="margin:0">Skriv et regnestykke eller et tema, så viser Kubo hvordan. Du kan også be om en oppgave!</p></div></div><button class="btn ghost small" id="bokOpen" style="margin-top:10px">📖 Bla i matteboka</button></div>
-  <div class="chat" id="chat">${chat.length?chat.map(m=>`<div class="msg ${m.role==='user'?'me':'bot'}">${m.role==='user'?esc(m.content):m.html||md(m.content||'')}</div>`).join(''):`<div class="msg bot">Hei${CFG.childName?' '+esc(CFG.childName):''}! 👋 Hva lurer du på? Trykk på en knapp eller skriv selv.</div><div class="sugg">${BOT_SUGG.map(s=>`<button class="chip" data-sugg="${esc(s)}">${esc(s)}</button>`).join('')}</div>`}</div>
+  <div class="chat" id="chat">${chat.length?chat.map(m=>`<div class="msg ${m.role==='user'?'me':'bot'}">${m.role==='user'?esc(m.content):m.html||md(m.content||'')}</div>`).join(''):`<div class="msg bot">Hei${CFG.childName?' '+esc(CFG.childName):''}! 👋 Hva lurer du på? Trykk på en knapp eller skriv selv.${krCfg().per>0?(moneyToday().n<krCfg().goal?`<br><br>💰 <b>Gjør ${krCfg().goal-moneyToday().n} oppgaver${moneyToday().n?' til':''} i dag, så får du ${krFmt(krGoalSum())}!</b> Trykk «Gi meg en oppgave» for å starte.`:`<br><br>💰 Du har tjent ${krFmt(moneyToday().kr)} i dag. Rått!`):''}</div><div class="sugg">${BOT_SUGG.map(s=>`<button class="chip" data-sugg="${esc(s)}">${esc(s)}</button>`).join('')}</div>`}</div>
   <div class="ask-row"><textarea id="askIn" placeholder="${botQuiz?'Skriv svaret ditt her …':'F.eks. 7 · 8 eller «brøk» …'}" aria-label="Skriv til Kubo" inputmode="text"></textarea><button class="btn sky" id="askBtn">Send</button></div>
   ${chat.length?'<button class="btn ghost small" id="newChat" style="align-self:flex-start">Ny samtale</button>':''}</div>`}
 document.addEventListener('click',e=>{if(e.target.id==='bokOpen'){bokOpen=true;render();scrollTo({top:0})}if(e.target.id==='bokClose'){bokOpen=false;render()}if(e.target.id==='newChat')botQuiz=null});
@@ -1275,6 +1293,13 @@ function viewVoksen(){
    <div class="field"><label for="childName"><b>Barnets fornavn</b> <span class="note">(Kubo bruker det når han hilser)</span></label><input id="childName" value="${esc(CFG.childName||'')}" placeholder="Fornavn" maxlength="30"></div>
    ${COURSES.map(c=>{const done=courseDone(c.id),paid=CFG.paid[c.id];return `<div class="field"><label for="pz-${c.id}"><b>${c.label}</b> <span class="status-pill ${paid?'pill-ok':done?'pill-gold':'pill-wait'}">${paid?'Utbetalt':done?'Klar til utbetaling':courseCrowns(c.id)+' / '+courseUnits(c.id).length*3+' kroner'}</span></label><div class="row" style="flex-wrap:nowrap"><input id="pz-${c.id}" value="${esc(CFG.prizes[c.id]||'')}" placeholder="F.eks. 300 kr eller kinotur" style="flex:1;min-width:0">${done?`<button class="btn small ${paid?'ghost':'gold'}" data-paid="${c.id}">${paid?'Angre':'Utbetalt'}</button>`:''}</div></div>`}).join('')}
    <button class="btn" id="savePrizes" style="align-self:flex-start">Lagre premier</button>${cfgRef&&!canCfg?'<p class="note">Premiene lagres bare på denne enheten fordi du ikke er eier av appen.</p>':''}</div>
+   ${(()=>{const k=krCfg(),tot=(S.money&&S.money.total)||0,bal=krBalance();return `<div class="card stack"><h2 style="font-size:22px">💰 Lommepenger for oppgaver</h2>
+    <p class="muted" style="margin:0">Barnet tjener beløpet for hver oppgave som løses riktig på første forsøk, i leksjoner og hos Kubo. Lynrunden teller ikke. Kubo oppfordrer til å nå dagsmålet hver dag. Sett beløpet til 0 for å slå det av.</p>
+    <div class="row" style="align-items:flex-end"><div class="field" style="flex:1;min-width:110px"><label for="krPer"><b>Kr per oppgave</b></label><input id="krPer" inputmode="decimal" value="${fmt(k.per)}"></div>
+     <div class="field" style="flex:1;min-width:110px"><label for="krGoal"><b>Dagsmål (oppgaver)</b></label><input id="krGoal" inputmode="numeric" value="${k.goal}"></div>
+     <div class="field" style="flex:1;min-width:110px"><label for="krCap"><b>Maks kr per dag</b> <span class="note">(0 = ingen grense)</span></label><input id="krCap" inputmode="decimal" value="${fmt(k.cap)}"></div></div>
+    <p style="margin:0">Tjent totalt: <b>${krFmt(tot)}</b> · Utbetalt: <b>${krFmt(k.paid)}</b> · Til gode: <b style="color:var(--grass-d)">${krFmt(bal)}</b> · I dag: ${moneyToday().n} oppgaver, ${krFmt(moneyToday().kr)}</p>
+    <div class="row"><button class="btn small" id="saveKr">Lagre</button>${bal>0?`<button class="btn gold small" id="payKr">Marker ${krFmt(bal)} som utbetalt</button>`:''}</div></div>`})()}
    <div class="card stack"><h2 style="font-size:22px">Fremgang</h2>${COURSES.map(c=>`<div><b>${c.label}</b> <span class="note">${courseCrowns(c.id)} av ${courseUnits(c.id).length*3} kroner</span><div class="meter"><i style="width:${courseCrowns(c.id)/(courseUnits(c.id).length*3)*100}%;background:var(--grass)"></i></div></div>`).join('')}
     <p style="margin:0">Dager på rad: <b>${S.streak.n}</b> · Sist aktiv: <b>${S.streak.last||'aldri'}</b> · XP i dag: <b>${todayXP()}/${GOAL}</b> · Dagsoppdrag: <b>${S.stats.missions||0}</b></p>
     <p style="margin:0">Leksjoner: <b>${S.stats.lessons}</b> · Riktige svar: <b>${S.stats.correct}</b> · Feil: <b>${S.stats.wrong}</b> · Gangefakta som sitter: <b>${factsKnown()}/100</b></p>
@@ -1289,9 +1314,13 @@ document.addEventListener('click',async e=>{const id=e.target.id;
   if(id==='lockP'){parentOpen=false;render()}
   if(id==='savePrizes'){CFG.childName=$('#childName').value.trim();COURSES.forEach(c=>{CFG.prizes[c.id]=$('#pz-'+c.id).value.trim()});if(await saveCfg())toast('Premiene er lagret.');render()}
   const pb=e.target.closest('[data-paid]');if(pb){const c=pb.dataset.paid;CFG.paid[c]=!CFG.paid[c];await saveCfg();render()}
+  if(id==='saveKr'){const k=krCfg(),p=parseNum($('#krPer').value),g=parseInt($('#krGoal').value,10),c=parseNum($('#krCap').value||'0');
+    if(isNaN(p)||p<0||p>1000||!(g>=1&&g<=200)||isNaN(c)||c<0){toast('Sjekk tallene: beløp 0 eller mer, dagsmål mellom 1 og 200.');return}
+    CFG.kr={per:p,goal:g,cap:c,paid:k.paid};if(await saveCfg())toast('Lommepenger er lagret.');render()}
+  if(id==='payKr'){const k=krCfg();CFG.kr={...k,paid:+(((S.money&&S.money.total)||0)).toFixed(2)};if(await saveCfg())toast('Markert som utbetalt.');render()}
   if(id==='sndBtn'){S.sound=!S.sound;save();render()}
   if(id==='chgPin'){CFG.pin='';parentOpen=false;await saveCfg();render()}
-  if(id==='resetBtn'){if(!resetArm){resetArm=true;render();return}const snd=S.sound;S=blank();S.sound=snd;resetArm=false;save();toast('Fremgangen er nullstilt.');render()}
+  if(id==='resetBtn'){if(!resetArm){resetArm=true;render();return}const snd=S.sound;S=blank();S.sound=snd;resetArm=false;save();if(CFG.kr){CFG.kr.paid=0;await saveCfg()}toast('Fremgangen er nullstilt.');render()}
   if(id==='resetNo'){resetArm=false;render()}
   if(id==='bkCopy'){const data='MK1:'+btoa(unescape(encodeURIComponent(JSON.stringify({S,CFG}))));navigator.clipboard.writeText(data).then(()=>toast('Sikkerhetskopien er kopiert. Lim den inn i en melding til deg selv.')).catch(()=>{const t=$('#bkIn');t.value=data;t.select();toast('Marker teksten i feltet og kopier den.')})}
   if(id==='bkLoad'){try{const raw=$('#bkIn').value.trim().replace(/^MK1:/,'');const o=JSON.parse(decodeURIComponent(escape(atob(raw))));if(!o.S)throw 0;S=hydrate(o.S);if(o.CFG)CFG=Object.assign({pin:'',prizes:{},paid:{}},o.CFG);save();await saveCfg();toast('Fremgangen er gjenopprettet!');render()}catch(_){toast('Koden ser ikke riktig ut. Sjekk at hele teksten er med.')}}});
